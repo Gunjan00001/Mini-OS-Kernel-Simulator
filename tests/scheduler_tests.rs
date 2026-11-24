@@ -122,6 +122,12 @@ fn gantt_renders_a_line_per_row() {
 }
 
 #[test]
+fn gantt_handles_an_empty_timeline() {
+    let r = scheduler::schedule(&[], Algorithm::Fcfs);
+    assert!(scheduler::gantt(&r, &[]).contains("empty timeline"));
+}
+
+#[test]
 fn process_stats_are_consistent_with_slots() {
     let procs = vec![p(1, 0, 4, 1), p(2, 1, 3, 1), p(3, 2, 2, 1)];
     let r = scheduler::schedule(&procs, Algorithm::Fcfs);

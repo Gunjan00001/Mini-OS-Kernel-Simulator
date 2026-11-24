@@ -303,6 +303,9 @@ pub fn process_stats(result: &ScheduleResult, processes: &[Process]) -> Vec<Proc
 ///        | P1 | P2 | P3 |
 /// ```
 pub fn gantt(result: &ScheduleResult, processes: &[Process]) -> String {
+    if result.slots.is_empty() {
+        return "(empty timeline: no schedulable processes)".to_string();
+    }
     let name = |pid: u32| {
         processes
             .iter()
