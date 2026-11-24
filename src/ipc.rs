@@ -145,26 +145,46 @@ impl Ipc {
         Ok(buf[offset..offset + len].to_vec())
     }
 
-    /// One-line summary of every queue for menus.
+    /// Colored summary of every queue for menus, with capacity bars.
     pub fn summary(&self) -> String {
+        use crate::theme::{self, paint, BOLD, CYAN, DIM, RED};
         if self.queues.is_empty() && self.regions.is_empty() {
-            return "No queues or shared memory regions yet.".to_string();
+            return paint("No queues or shared memory regions yet.", DIM);
         }
         let mut s = String::new();
         for (id, q) in &self.queues {
+            let blocked = if q.blocked_senders.is_empty() {
+                paint("none", DIM)
+            } else {
+                paint(&format!("{:?}", q.blocked_senders), RED)
+            };
             s.push_str(&format!(
-                "Q{}: {}/{} messages, blocked senders: {:?}\n",
-                id,
+                "{} {} {}/{} messages{}  blocked senders: {}\n",
+                paint(&format!("Q{id}"), &format!("{BOLD}{CYAN}")),
+                theme::bar(q.len() as u32, q.capacity as u32, 10),
                 q.len(),
                 q.capacity,
-                q.blocked_senders
+                "",
+                blocked
             ));
             for (i, m) in q.messages().iter().enumerate() {
-                s.push_str(&format!("  [{}] P{} -> P{}: {:?}\n", i, m.from, m.to, m.body));
+                s.push_str(&format!(
+                    "  {} {} {} {}: {:?}\n",
+                    paint(&format!("[{}]", i), DIM),
+                    paint(&format!("P{}", m.from), theme::pid_fg(m.from)),
+                    paint("->", DIM),
+                    paint(&format!("P{}", m.to), theme::pid_fg(m.to)),
+                    m.body
+                ));
             }
         }
         for (id, r) in &self.regions {
-            s.push_str(&format!("R{}: shared memory, {} bytes\n", id, r.len()));
+            s.push_str(&format!(
+                "{} {} {} bytes\n",
+                paint(&format!("R{id}"), &format!("{BOLD}{CYAN}")),
+                paint("shared memory,", DIM),
+                r.len()
+            ));
         }
         s
     }
