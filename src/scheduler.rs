@@ -321,7 +321,11 @@ pub fn gantt(result: &ScheduleResult, processes: &[Process]) -> String {
             .max(slot.start.to_string().len())
             .max(4);
         top.push_str(&format!("{:>w$} ", slot.start, w = w + 1));
-        mid.push_str(&format!("|{:<w$}", label, w = w + 1));
+        mid.push('|');
+        mid.push_str(&crate::theme::gantt_cell(
+            slot.pid,
+            &format!("{:<w$}", label, w = w + 1),
+        ));
         last_end = slot.end;
     }
     top.push_str(&format!("{:>3}", last_end));
