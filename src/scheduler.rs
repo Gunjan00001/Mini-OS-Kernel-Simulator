@@ -5,8 +5,6 @@
 //! ticks and never mutate the caller's process table, so the same workload
 //! can be run through every algorithm and compared.
 
-use std::collections::HashMap;
-
 use crate::process::Process;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -331,7 +329,3 @@ pub fn gantt(result: &ScheduleResult, processes: &[Process]) -> String {
     format!("{}\n{}", top, mid)
 }
 
-/// Convenience: pid -> name map.
-pub fn name_map(processes: &[Process]) -> HashMap<u32, String> {
-    processes.iter().map(|p| (p.pid, p.name.clone())).collect()
-}
