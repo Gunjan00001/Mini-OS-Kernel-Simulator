@@ -411,11 +411,17 @@ Result: counter = {} (correct value would be {}).",
                 let threads = ask_u32_or("Number of threads", 4);
                 let iters = ask_u32_or("Increments per thread", 100_000);
                 let (racy, locked, expected) = sync::race_demo_threads(threads, iters);
+                let lost = expected.saturating_sub(racy);
+                let note = if lost == 0 {
+                    "no lost updates this run (a data race is not guaranteed to manifest)"
+                } else {
+                    "updates lost to the data race"
+                };
                 println!(
                     "Expected      : {}
-RACY result   : {}  <- data race, updates lost
+RACY result   : {}  <- {}
 Mutex result  : {}  <- always exact",
-                    expected, racy, locked
+                    expected, racy, note, locked
                 );
             }
             "3" => {
