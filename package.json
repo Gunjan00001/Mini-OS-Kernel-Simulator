@@ -1,6 +1,6 @@
 {
   "name": "mini-os-kernel-simulator",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Interactive Mini OS Kernel Simulator in Rust: processes, scheduling, memory, paging, sync, IPC, deadlocks, syscalls.",
   "license": "MIT",
   "bin": {
