@@ -4,7 +4,16 @@ All notable changes to this project. Format based on
 [Keep a Changelog](https://keepachangelog.com/). Versioning: `major.minor.bugs`
 — the third number counts bug-fix releases.
 
-## [Unreleased]
+## [1.2.2] - 2026-11-25
+
+### Fixed
+- Page replacement demo panicked when the frame count was 0: the offline
+  simulator indexed an empty frame list. The count is clamped to one frame,
+  and a regression test covers all three policies. Test suite is now 69.
+- Clippy cleanups: no nested `format!` calls, checked percentage arithmetic,
+  consistent context strip styling.
+
+## [1.2.1] - 2026-11-25
 
 ### Added
 - Presentation: 17 colorized slides in `docs/presentation` (PPTX and PDF),
@@ -133,6 +142,9 @@ test where testable.
   Belady's reference string, and Silberschatz deadlock examples.
 - `docs/architecture.md`, `docs/algorithms.md`.
 
+[1.2.2]: https://github.com/Gunjan00001/Mini-OS-Kernel-Simulator/releases/tag/v1.2.2
+[1.2.1]: https://github.com/Gunjan00001/Mini-OS-Kernel-Simulator/releases/tag/v1.2.1
+[1.2.0]: https://github.com/Gunjan00001/Mini-OS-Kernel-Simulator/releases/tag/v1.2.0
 [1.1.0]: https://github.com/Gunjan00001/Mini-OS-Kernel-Simulator/releases/tag/v1.1.0
 [1.0.1]: https://github.com/Gunjan00001/Mini-OS-Kernel-Simulator/releases/tag/v1.0.1
 [1.0.0]: https://github.com/Gunjan00001/Mini-OS-Kernel-Simulator/releases/tag/v1.0.0

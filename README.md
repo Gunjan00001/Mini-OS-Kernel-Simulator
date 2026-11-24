@@ -72,7 +72,7 @@ Then run `mini-os-kernel` (or `cargo run`). Every option is in
 
 ```sh
 cargo run --release
-cargo test          # 68 tests
+cargo test          # 69 tests
 ```
 
 Zero external dependencies — the whole simulator is standard library only.

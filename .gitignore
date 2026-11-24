@@ -11,3 +11,6 @@ Thumbs.db
 
 # npm pack output
 *.tgz
+
+# /brag output
+brag-output/

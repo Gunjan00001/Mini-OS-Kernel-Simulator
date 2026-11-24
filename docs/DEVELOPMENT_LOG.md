@@ -308,3 +308,26 @@ PowerPoint export.
 
 Documents live in `docs/presentation` (PPTX and PDF), `docs/report`
 (DOCX and PDF) and `docs/DEMO_GUIDE.md`.
+
+
+---
+
+## Session 5 — Bug audit and launch video (v1.2.2)
+
+**What.** Full audit pass (tests, clippy, edge cases) and a 22 second launch
+video generated with Hyperframes from the real screenshots.
+
+**Bug found.** The page replacement demo accepted a frame count of 0; the
+offline simulator then tried to evict from an empty frame list and panicked.
+Clamped to one frame and added a regression test that exercises FIFO, LRU and
+Optimal, bringing the suite to 69. Also cleared all clippy warnings (nested
+format strings, checked percentage arithmetic) and stopped dimming context
+lines that already carry color accents.
+
+**Brag video.** `brag-output/brag.mp4`: six scenes, 1920x1080 at 30fps, music
+plus motion matched SFX, real UI frames from the SRTF Gantt, comparison table,
+Banker's Algorithm and dashboard. Timing follows the bundled music cue sheet
+(strong cues at 8.74 and 18.56 seconds). The poster frame is baked as frame 0.
+
+**Verification.** 69 tests green, zero clippy warnings, video check passed
+before rendering, poster and decoded frames inspected.
