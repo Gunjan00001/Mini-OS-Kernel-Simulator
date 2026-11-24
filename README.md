@@ -10,13 +10,19 @@ are data structures advanced by ticks, not real threads. Real OS threads are
 used in exactly one place: the synchronization demos, where showing genuine
 concurrency is the point.
 
+The terminal UI is colorized — per-pid colored Gantt charts, state-colored
+tables, usage bars, verdict-colored deadlock results. Colors auto-disable
+when output is piped or `NO_COLOR` is set; Windows VT mode is enabled
+automatically.
+
 <img src="docs/screenshots/01-main-menu.png" alt="Main menu" width="620">
 
 ## Screenshots
 
 Real captured sessions: every PNG below is rendered from an actual terminal
-transcript produced by `scripts/capture-screenshots.ps1` (committed, so the
-shots are reproducible).
+transcript produced by the committed capture script
+(`scripts/capture-screenshots.ps1`: scripted input → real binary with ANSI
+colors → HTML → headless Chrome screenshot), so the shots are reproducible.
 
 | SRTF scheduling | Algorithm comparison |
 |---|---|

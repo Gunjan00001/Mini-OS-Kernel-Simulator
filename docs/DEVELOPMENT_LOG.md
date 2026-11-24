@@ -227,3 +227,56 @@ behaviour. `scripts/capture-screenshots.ps1` regenerates every image.
 
 **Verification.** 68 tests green; every rendered PNG inspected; raw
 transcripts retained in `target/shots` (git-ignored) for auditability.
+
+---
+
+## Session 3 — Colorized UI + visual overhaul (v1.2.0)
+
+**What.** Added a color theme, restyled every screen, and rewrote the
+screenshot pipeline so the repo images show the colors.
+
+**Why zero-dependency colors.** ANSI escapes work everywhere; the only
+platform barrier is Windows conhost, fixed by enabling
+`ENABLE_VIRTUAL_TERMINAL_PROCESSING` through two direct kernel32 calls (no
+`windows-sys`, no `crossterm`). Colors turn themselves off when stdout is
+not a terminal, so tests and pipes see the same plain text as before — all
+68 existing tests kept passing without modification.
+
+**Why a screenshot HTML pipeline.** Re-rendering ANSI into a bitmap with GDI
+turned into a font-metrics fight: GDI+ `MeasureString` over-reports
+(12.6px vs 7.7px actual advance), GDI `TextRenderer` pads measurements,
+bold variants change per-glyph advances, and any mismatch misplaces the
+right border of a box further on the line. Converting the transcript to HTML
+spans and screenshotting with headless Chrome removes the hand-rolled layout
+math entirely.
+
+**Failures, in order (all in this session):**
+
+1. First color build: the dashboard's MEMORY/PAGING sections printed
+   `MEMORYTotal : ...` — a format-string placeholder count mismatch. Rewrote
+   the template with one pair of arguments per line.
+2. Screenshot pipeline v2 (GDI): per-run x offsets drifted; measured char
+   width was 12px while DrawString advanced 7.7px, pushing box borders
+   ~50px right. Tried TextRenderer measurement (8.8px), then a fixed grid.
+3. `Get-Content` mangled UTF-8 box characters (PowerShell 5.1 reads native
+   output with the OEM codepage). Fixed by setting
+   `[Console]::OutputEncoding = UTF8` in the capture script.
+4. Setting `$OutputEncoding = UTF8` to fix #3 **prepended a BOM to piped
+   stdin**, so the simulator read `\uFEFF9` and printed
+   "Unknown option: 9". Removed that assignment; inputs are ASCII.
+5. Crop anchors failed after colors were added: lines now start with ANSI
+   escapes, and PowerShell `-match` is case-insensitive, so the anchor
+   "KERNEL DASHBOARD" selected the menu item "8. Kernel Dashboard".
+   Fixed by matching against ANSI-stripped text with `-cmatch`.
+6. Box-drawing glyphs in **bold** spans have different advances, so the
+   banner's right border drifted; borders are no longer bolded.
+7. LCD subpixel rendering added color fringes to thin box lines; headless
+   Chrome now runs with `--disable-lcd-text`.
+8. The shade glyph `░` in progress bars falls back to a different font in
+   some renderers and looks like noise; bars now use solid blocks + spaces.
+9. Honestly-reported earlier mistake, still relevant here: the v1.1.1 docs
+   claimed "76 tests" (actual 68). Counts in this session were verified with
+   `Select-String -Pattern '^#\[test\]'`.
+
+**Result:** 68 tests green, zero warnings, 12 colorized screenshots
+regenerated, CI green on the push.

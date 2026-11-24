@@ -4,6 +4,32 @@ All notable changes to this project. Format based on
 [Keep a Changelog](https://keepachangelog.com/). Versioning: `major.minor.bugs`
 — the third number counts bug-fix releases.
 
+## [1.2.0] - 2026-11-25
+
+The "make it not boring" release: the terminal UI is now colorized and much
+more visual.
+
+### Added
+- `theme.rs`: zero-dependency color theme with Windows VT-mode enablement
+  (two kernel32 calls), `NO_COLOR`/pipe detection, automatic fallback.
+- **Per-pid colored Gantt charts** with legend; colored process states in
+  tables; best-value highlighting in the algorithm comparison.
+- Colorized memory map, paging frame table, dashboard with usage bar,
+  deadlock verdicts, IPC queue capacity bars, sync results and event log.
+- Box-drawn banner, `»` prompt, context strip on every menu
+  (`tick · processes · scheduler · memory`), clear-screen on menu entry and
+  "press Enter" pauses for long outputs (interactive only).
+- Visual screenshot pipeline rewritten as ANSI → HTML → headless Chrome,
+  producing the colorized PNGs in `docs/screenshots/`.
+
+### Fixed
+- Dashboard memory/paging sections lost line breaks in the first colorized
+  build (format-string placeholder mismatch).
+- Menu hint column collided with the longest option label.
+- Screenshot renderer: GDI advance-width mismatches, PowerShell 5.1 UTF-8
+  decoding, BOM-contaminated piped input, case-insensitive crop anchors and
+  ANSI-prefixed anchor lines; all resolved and documented in the dev log.
+
 ## [1.1.1] - 2026-11-25
 
 Screenshot release plus the bugs those screenshots exposed.
