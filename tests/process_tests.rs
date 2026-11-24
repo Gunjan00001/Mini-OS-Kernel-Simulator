@@ -105,6 +105,15 @@ fn fork_fails_when_memory_insufficient_and_leaves_no_process() {
 }
 
 #[test]
+fn failed_fork_does_not_consume_a_pid() {
+    let mut k = Kernel::new(100, 4, 8);
+    assert!(k.fork_process("big", 0, 5, 1, 500).is_err());
+    // The next successful creation gets the lowest unused pid.
+    let pid = k.fork_process("small", 0, 5, 1, 10).unwrap();
+    assert_eq!(pid, 1);
+}
+
+#[test]
 fn exit_terminates_and_frees_memory() {
     let mut k = Kernel::new(1024, 4, 8);
     let pid = k.fork_process("worker", 0, 5, 1, 256).unwrap();

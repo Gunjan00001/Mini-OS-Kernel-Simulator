@@ -162,10 +162,11 @@ impl Kernel {
         mem_req: u32,
     ) -> Result<u32, KernelError> {
         let pid = self.next_pid;
-        self.next_pid += 1;
         if mem_req > 0 {
             self.memory.allocate(pid, name, mem_req)?;
         }
+        // Only consume the pid once creation can no longer fail.
+        self.next_pid += 1;
         self.processes
             .insert(pid, Process::new(pid, name, arrival, burst, priority, mem_req));
         self.log(format!("Process {} created (pid {})", name, pid));
