@@ -280,3 +280,31 @@ math entirely.
 
 **Result:** 68 tests green, zero warnings, 12 colorized screenshots
 regenerated, CI green on the push.
+
+---
+
+## Session 4 — Presentation, report and demo materials (v1.2.1)
+
+**What.** Generated a 17 slide presentation (PPTX and PDF), an 11 page project
+report (DOCX and PDF) and a live demo guide, all from the real screenshots
+and measured results.
+
+**How.** `scripts/make_docs.py` builds both documents with python-pptx and
+python-docx; PDFs are exported through the installed PowerPoint and Word.
+Keeping the generator committed means the documents can be rebuilt after any
+UI change instead of drifting.
+
+**Failure found while reviewing the report figures.** The paging frame table
+rendered `0FREE` with no gap between the frame number and the content. The
+format width was applied to the ANSI wrapped string, and the invisible escape
+codes counted as characters, so no padding was produced. Fix: pad the number
+first, then color it. This is the same class of bug as the earlier dashboard
+line break regression: styling layered onto text must never participate in
+width arithmetic.
+
+**Verification.** All 68 tests still green, all 12 screenshots regenerated at
+v1.2.0, both PDFs re-exported, slide deck inspected slide by slide after
+PowerPoint export.
+
+Documents live in `docs/presentation` (PPTX and PDF), `docs/report`
+(DOCX and PDF) and `docs/DEMO_GUIDE.md`.

@@ -155,6 +155,15 @@ See `docs/architecture.md` and `docs/algorithms.md` for design details,
 `docs/INSTALL.md` for installation, and `docs/DEVELOPMENT_LOG.md` for the
 development history.
 
+## Presentation and report
+
+- [`docs/presentation/MiniOSKernel_Simulator.pptx`](docs/presentation/MiniOSKernel_Simulator.pptx)
+  (17 slides, colorized; PDF alongside)
+- [`docs/report/MiniOSKernel_Simulator_Report.docx`](docs/report/MiniOSKernel_Simulator_Report.docx)
+  (11 pages; PDF alongside)
+- [`docs/DEMO_GUIDE.md`](docs/DEMO_GUIDE.md) five minute live demo script
+- Regenerate both with `python scripts/make_docs.py`
+
 ## Packaging files
 
 ```
