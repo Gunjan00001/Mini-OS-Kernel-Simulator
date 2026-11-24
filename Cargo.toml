@@ -1,0 +1,10 @@
+[package]
+name = "mini-os-kernel"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# Zero external dependencies: everything uses the Rust standard library.
+
+[profile.release]
+# Keep defaults; nothing here needs tuning.
