@@ -5,11 +5,12 @@
 
 const { spawnSync } = require("node:child_process");
 const path = require("node:path");
+const { cargoBin } = require("./cargo");
 
 const root = path.resolve(__dirname, "..");
 
-const check = spawnSync("cargo", ["--version"], { stdio: "ignore" });
-if (check.status !== 0) {
+const cargo = cargoBin();
+if (!cargo) {
   console.warn(
     "[mini-os-kernel] cargo not found: skipping pre-build.\n" +
       "  Install Rust from https://rustup.rs, then run: npx mini-os-kernel"
@@ -18,7 +19,7 @@ if (check.status !== 0) {
 }
 
 console.log("[mini-os-kernel] pre-building release binary...");
-const build = spawnSync("cargo", ["build", "--release", "--locked"], {
+const build = spawnSync(cargo, ["build", "--release", "--locked"], {
   cwd: root,
   stdio: "inherit",
 });

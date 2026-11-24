@@ -5,6 +5,7 @@
 const { spawnSync } = require("node:child_process");
 const path = require("node:path");
 const fs = require("node:fs");
+const { cargoBin } = require("./cargo");
 
 const root = path.resolve(__dirname, "..");
 const exe = path.join(
@@ -15,8 +16,15 @@ const exe = path.join(
 );
 
 function cargoBuild() {
+  const cargo = cargoBin();
+  if (!cargo) {
+    console.error(
+      "[mini-os-kernel] cargo not found. Install Rust from https://rustup.rs and retry."
+    );
+    process.exit(1);
+  }
   console.error("[mini-os-kernel] building (first run)...");
-  const build = spawnSync("cargo", ["build", "--release", "--locked"], {
+  const build = spawnSync(cargo, ["build", "--release", "--locked"], {
     cwd: root,
     stdio: "inherit",
   });
