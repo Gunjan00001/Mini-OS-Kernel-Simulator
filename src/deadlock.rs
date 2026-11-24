@@ -226,20 +226,37 @@ fn fmt_vec(v: &[u32]) -> String {
     format!("({})", parts.join(", "))
 }
 
-/// One-line-per-process dump for menus.
+/// One-line-per-process dump for menus, tinted by column.
 pub fn display_state(state: &ResourceState) -> String {
+    use crate::theme::{paint, CYAN, DIM, YELLOW};
     let mut s = String::new();
     let avail = state.available();
-    s.push_str(&format!("Total     : {:?}\n", state.total));
-    s.push_str(&format!("Available : {:?}\n", avail));
-    s.push_str("PID  ALLOCATED        MAX              REQUEST\n");
+    s.push_str(&format!(
+        "{} {}\n",
+        paint("Total     :", CYAN),
+        format!("{:?}", state.total)
+    ));
+    s.push_str(&format!(
+        "{} {}\n",
+        paint("Available :", CYAN),
+        paint(&format!("{:?}", avail), YELLOW)
+    ));
+    s.push_str(&paint("PID  ALLOCATED        MAX              REQUEST", &format!("{CYAN}\x1b[1m")));
+    s.push('\n');
     for i in 0..state.num_processes() {
         s.push_str(&format!(
-            "{:<4} {:<16} {:<16} {}\n",
-            i,
+            "{} {:<16} {:<16} {}\n",
+            paint(&format!("{:<4}", i), DIM),
             fmt_vec(&state.allocated[i]),
             fmt_vec(&state.max[i]),
-            fmt_vec(&state.request[i])
+            paint(
+                &fmt_vec(&state.request[i]),
+                if state.request[i].iter().any(|&x| x > 0) {
+                    YELLOW
+                } else {
+                    DIM
+                }
+            )
         ));
     }
     s
