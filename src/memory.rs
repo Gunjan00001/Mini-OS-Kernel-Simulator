@@ -169,23 +169,37 @@ impl MemoryManager {
     /// ```text
     /// PHYSICAL MEMORY (total 1024)
     /// +----------------------+
-    /// | P1           0-300   |
+    /// |P1 0-300              |
     /// +----------------------+
-    /// | FREE       300-1024  |
+    /// |FREE 300-1024         |
     /// +----------------------+
     /// ```
+    /// Owner rows are tinted by pid; free rows are dim green.
     pub fn display(&self) -> String {
-        let mut s = format!("PHYSICAL MEMORY (total {})\n", self.total);
+        use crate::theme::{paint, pid_fg, CYAN, DIM, GREEN};
+        let mut s = format!(
+            "{}\n",
+            paint(
+                &format!("PHYSICAL MEMORY (total {})", self.total),
+                &format!("{CYAN}\x1b[1m")
+            )
+        );
+        let border = paint("+----------------------+", DIM);
         for b in &self.blocks {
-            let label = match &b.owner {
-                Some((_pid, name)) => format!("{name} {}-{}", b.start, b.start + b.size),
-                None => format!("FREE {}-{}", b.start, b.start + b.size),
+            let (text, style) = match &b.owner {
+                Some((pid, name)) => (
+                    truncate(&format!("{name} {}-{}", b.start, b.start + b.size), 22),
+                    pid_fg(*pid),
+                ),
+                None => (
+                    truncate(&format!("FREE {}-{}", b.start, b.start + b.size), 22),
+                    GREEN,
+                ),
             };
-            let label = truncate(&label, 22);
-            s.push_str(&format!("+----------------------+\n"));
-            s.push_str(&format!("|{:<22}|\n", label));
+            s.push_str(&format!("{border}\n|{}|\n", paint(&format!("{:<22}", text), style)));
         }
-        s.push_str("+----------------------+\n");
+        s.push_str(&border);
+        s.push('\n');
         s
     }
 }
