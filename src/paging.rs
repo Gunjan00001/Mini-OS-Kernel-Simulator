@@ -208,7 +208,9 @@ impl PagedMemory {
                 Some(u) => paint(&format!("P{} page {}", u.pid, u.page), pid_fg(u.pid)),
                 None => paint("FREE", GREEN),
             };
-            s.push_str(&format!("{}\n", format!("{:<7}{}", paint(&i.to_string(), DIM), content)));
+            // Pad before painting: ANSI codes count as characters and would
+            // defeat the format width.
+            s.push_str(&format!("{}{}\n", paint(&format!("{:<7}", i), DIM), content));
         }
         s.push_str(&format!(
             "{} {}  {} {}\n",
