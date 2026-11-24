@@ -1,0 +1,7 @@
+target/
+.git/
+.gitignore
+docs/
+tests/
+install.sh
+install.ps1
