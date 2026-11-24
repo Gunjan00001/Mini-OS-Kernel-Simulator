@@ -350,11 +350,10 @@ impl Kernel {
             paint(&faults.to_string(), if faults > 0 { RED } else { DIM }),
             paint(&hits.to_string(), GREEN),
         );
-        let pct = if self.memory.total == 0 {
-            0
-        } else {
-            used * 100 / self.memory.total
-        };
+        let pct = used
+            .checked_mul(100)
+            .and_then(|scaled| scaled.checked_div(self.memory.total))
+            .unwrap_or(0);
         let border = paint("╔════════════════════════════════════════════════════════╗", CYAN);
         let bottom = paint("╚════════════════════════════════════════════════════════╝", CYAN);
         let title = paint(
@@ -363,6 +362,13 @@ impl Kernel {
         );
         let memory_header = paint("MEMORY", &format!("{BOLD}{CYAN}"));
         let paging_header = paint("PAGING", &format!("{BOLD}{CYAN}"));
+        let total_mem = format!("{} units", self.memory.total);
+        let usage = format!(
+            "{} {}%",
+            theme::bar(used, self.memory.total, 24),
+            paint(&pct.to_string(), YELLOW)
+        );
+        let frames = format!("{}/{}", self.paging.used_frames(), self.paging.total_frames);
         format!(
 "{border}
 {title}
@@ -415,18 +421,18 @@ impl Kernel {
             paint(&active.to_string(), GREEN),
             memory_header,
             paint("Total            : ", CYAN),
-            paint(&format!("{} units", self.memory.total), DIM),
+            paint(&total_mem, DIM),
             paint("Used             : ", CYAN),
             paint(&used.to_string(), YELLOW),
             paint("Free             : ", CYAN),
             paint(&free.to_string(), GREEN),
             paint("Largest free hole: ", CYAN),
-            self.memory.largest_free_hole().to_string(),
+            self.memory.largest_free_hole(),
             paint("Memory usage     : ", CYAN),
-            format!("{} {}%", theme::bar(used, self.memory.total, 24), paint(&pct.to_string(), YELLOW)),
+            usage,
             paging_header,
             paint("Frames used      : ", CYAN),
-            format!("{}/{}", self.paging.used_frames(), self.paging.total_frames),
+            frames,
             paint("Page faults      : ", CYAN),
             faults_s,
             paint("Page hits        : ", CYAN),

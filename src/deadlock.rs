@@ -231,10 +231,11 @@ pub fn display_state(state: &ResourceState) -> String {
     use crate::theme::{paint, CYAN, DIM, YELLOW};
     let mut s = String::new();
     let avail = state.available();
+    let total_display = format!("{:?}", state.total);
     s.push_str(&format!(
         "{} {}\n",
         paint("Total     :", CYAN),
-        format!("{:?}", state.total)
+        total_display
     ));
     s.push_str(&format!(
         "{} {}\n",

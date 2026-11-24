@@ -44,7 +44,9 @@ fn screen(title: &str, context: &str) {
     clear_screen();
     println!();
     println!("  {}", paint(&format!("── {title} "), &format!("{BOLD}{CYAN}")));
-    println!("  {}", paint(context, DIM));
+    // Context strings already carry their own color accents; dimming the
+    // whole line would reset when an embedded color ends.
+    println!("  {context}");
     println!();
 }
 
