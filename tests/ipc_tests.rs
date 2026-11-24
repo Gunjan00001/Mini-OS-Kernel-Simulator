@@ -145,6 +145,14 @@ fn producer_consumer_loses_no_messages() {
 }
 
 #[test]
+fn producer_consumer_survives_degenerate_parameters() {
+    // Zero consumers and zero capacity would deadlock a naive pipeline; the
+    // demo clamps both and must still complete with every item delivered.
+    let items = sync::producer_consumer(1, 0, 3, 0);
+    assert_eq!(items.len(), 3);
+}
+
+#[test]
 fn semaphore_demo_holds_mutual_exclusion() {
     let steps = sync::semaphore_demo();
     assert!(steps.iter().any(|s| s.contains("mutual exclusion holds")));

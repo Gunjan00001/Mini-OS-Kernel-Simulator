@@ -99,6 +99,11 @@ pub fn producer_consumer(
 ) -> Vec<u64> {
     use std::sync::atomic::{AtomicUsize, Ordering};
 
+    // Degenerate demos must not deadlock: no consumer means producers block
+    // forever on a full buffer, and a zero-capacity buffer can never accept.
+    let consumers = consumers.max(1);
+    let capacity = capacity.max(1);
+
     let queue = Arc::new((Mutex::new(VecDeque::<Option<u64>>::new()), Condvar::new()));
     let results = Arc::new(Mutex::new(Vec::<u64>::new()));
     // Decremented each time a consumer pops one producer's sentinel.
