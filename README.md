@@ -10,21 +10,46 @@ are data structures advanced by ticks, not real threads. Real OS threads are
 used in exactly one place: the synchronization demos, where showing genuine
 concurrency is the point.
 
-## Build and run
+## Install
 
-Requires Rust (any recent stable):
+```sh
+# npm (Node 16+; Rust auto-detected, see docs/INSTALL.md)
+npm install -g mini-os-kernel-simulator   # or: npx mini-os-kernel-simulator
+
+# cargo
+cargo install --git https://github.com/Gunjan00001/Mini-OS-Kernel-Simulator.git --locked mini-os-kernel
+
+# one-liner scripts
+curl -fsSL https://raw.githubusercontent.com/Gunjan00001/Mini-OS-Kernel-Simulator/main/install.sh | bash        # macOS / Linux
+irm https://raw.githubusercontent.com/Gunjan00001/Mini-OS-Kernel-Simulator/main/install.ps1 | iex               # Windows
+
+# docker
+docker build -t mini-os-kernel . && docker run -it --rm mini-os-kernel
+
+# from source
+git clone https://github.com/Gunjan00001/Mini-OS-Kernel-Simulator.git
+cd Mini-OS-Kernel-Simulator && cargo run --release
+```
+
+Then run `mini-os-kernel` (or `cargo run`). Every option is in
+[`docs/INSTALL.md`](docs/INSTALL.md).
+
+## Build and test (from a clone)
 
 ```sh
 cargo run --release
-```
-
-Run the test suite:
-
-```sh
-cargo test
+cargo test          # 76 tests
 ```
 
 Zero external dependencies — the whole simulator is standard library only.
+
+## Versioning and logs
+
+- Releases use `major.minor.bugs` (third number counts bug-fix releases).
+- [`CHANGELOG.md`](CHANGELOG.md) — per-release changes.
+- [`docs/DEVELOPMENT_LOG.md`](docs/DEVELOPMENT_LOG.md) — chronological
+  what/why log, failures included.
+
 
 ## Modules
 
@@ -92,4 +117,19 @@ tests/
 └── ipc_tests.rs        FIFO delivery, bounded queues, shared memory bounds, sync demos
 ```
 
-See `docs/architecture.md` and `docs/algorithms.md` for design details.
+See `docs/architecture.md` and `docs/algorithms.md` for design details,
+`docs/INSTALL.md` for installation, and `docs/DEVELOPMENT_LOG.md` for the
+development history.
+
+## Packaging files
+
+```
+package.json        npm wrapper (bin/build-on-demand)
+bin/                Node launcher + postinstall pre-build
+install.sh          macOS/Linux one-command installer
+install.ps1         Windows one-command installer (GNU toolchain)
+Dockerfile          multi-stage container build
+docs/INSTALL.md     every install path + registry publishing guide
+CHANGELOG.md        release notes (major.minor.bugs)
+docs/DEVELOPMENT_LOG.md  what/why log, failures included
+```
