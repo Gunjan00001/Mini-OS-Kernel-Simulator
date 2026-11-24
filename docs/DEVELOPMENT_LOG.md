@@ -153,3 +153,38 @@ simulator, `v1.0.1` = audit fixes, `v1.1.0` = installers and logging.
 **Git history.** Authored as small conventional commits (one per module, per
 test suite, per bug fix, per doc set) with annotated tags at each release, so
 the history itself reads as the development log.
+
+---
+
+## Session 1 — Packaging verification (found more bugs)
+
+**What.** Exercised every install path end-to-end instead of trusting the
+files.
+
+**Failures:**
+
+1. **npm wrapper could not find cargo.** `spawnSync("cargo")` relies on PATH;
+   this shell (and any terminal opened before rustup ran) has no
+   `~/.cargo/bin`. The wrapper reported "build failed" although Rust was
+   installed. **Fix:** `bin/cargo.js` probes `$CARGO`, PATH, then the rustup
+   default location. Re-tagged v1.1.0 after the fix (release had not been
+   published yet).
+2. **npm 11 blocks install scripts by default.** `npm install -g` warns that
+   the postinstall is "not yet covered by allowScripts" and skips it. The
+   pre-build is therefore an optimisation, not a requirement — the wrapper
+   builds on first run. Documented; no workaround needed.
+3. **Git remote was empty** (new repo, no refs) — `git ls-remote` printed
+   nothing with exit 0 before the first push. Expected, noted so it is not
+   mistaken for an auth failure.
+
+**Verification performed:**
+- Clean clone from GitHub → `cargo test` → 76 green.
+- `npm pack` → `npm install -g ./mini-os-kernel-simulator-1.1.0.tgz` →
+  `mini-os-kernel` runs on this machine (postinstall skipped by npm 11, the
+  first-run build path was exercised).
+- `node bin/mini-os-kernel.js` with piped input → builds and exits cleanly.
+- Three annotated tags (`v1.0.0`, `v1.0.1`, `v1.1.0`) and three GitHub
+  releases; `v1.1.0` ships a Windows binary.
+
+**Result:** 38 commits, 3 tags, 3 releases, CI workflow testing Linux/Windows/
+macOS on every push.

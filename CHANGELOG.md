@@ -26,6 +26,8 @@ Bug-fix release from the post-1.0.0 audit. 8 fixes, each with a regression
 test where testable.
 
 ### Fixed
+- **npm**: the wrapper now locates cargo in `~/.cargo/bin` when PATH is stale
+  (freshly installed Rust, terminal not restarted).
 - **ui**: EOF on stdin (piped input, closed console) caused an infinite retry
   loop in `ask_u32`; the simulator now exits cleanly.
 - **scheduler**: empty workload printed a malformed Gantt chart; now prints an
