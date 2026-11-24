@@ -178,7 +178,7 @@ impl MemoryManager {
         let mut s = format!("PHYSICAL MEMORY (total {})\n", self.total);
         for b in &self.blocks {
             let label = match &b.owner {
-                Some((pid, name)) => format!("P{pid} {name} {}-{}", b.start, b.start + b.size),
+                Some((_pid, name)) => format!("{name} {}-{}", b.start, b.start + b.size),
                 None => format!("FREE {}-{}", b.start, b.start + b.size),
             };
             let label = truncate(&label, 22);
