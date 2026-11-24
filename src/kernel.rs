@@ -267,6 +267,18 @@ impl Kernel {
         Ok(msg)
     }
 
+    /// Paging helper: attach a page table to an existing process.
+    /// Validates the pid through the kernel before touching the paging pool.
+    pub fn attach_paging(&mut self, pid: u32, size_bytes: u32) -> Result<u32, KernelError> {
+        self.require_pid(pid)?;
+        let pages = self.paging.attach(pid, size_bytes);
+        self.log(format!(
+            "P{}: page table attached ({} pages, page size {})",
+            pid, pages, self.paging.page_size
+        ));
+        Ok(pages)
+    }
+
     // ---- scheduling ----
 
     /// Run `algo` over a snapshot of live processes. The snapshot is cloned,

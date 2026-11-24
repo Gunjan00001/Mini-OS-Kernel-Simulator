@@ -172,6 +172,18 @@ fn dashboard_shows_a_single_current_process() {
 }
 
 #[test]
+fn paging_attach_requires_an_existing_process() {
+    let mut k = Kernel::new(1024, 4, 8);
+    assert!(k.attach_paging(9, 16).is_err());
+    let pid = k.fork_process("p", 0, 5, 1, 0).unwrap();
+    assert_eq!(k.attach_paging(pid, 10).unwrap(), 3); // ceil(10 / 4)
+    assert_eq!(k.paging.used_frames(), 0); // pages are loaded lazily
+    // Exiting the process releases the page table.
+    k.exit_process(pid).unwrap();
+    assert!(k.paging.translate(pid, 0, mini_os_kernel::paging::Replacement::Fifo).is_err());
+}
+
+#[test]
 fn every_syscall_advances_the_tick_and_logs() {
     let mut k = Kernel::new(1024, 4, 8);
     let before = k.tick;
