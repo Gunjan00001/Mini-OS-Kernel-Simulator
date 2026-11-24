@@ -134,6 +134,14 @@ fn inconsistent_state_cannot_be_used_for_a_grant() {
 }
 
 #[test]
+fn display_state_uses_compact_vectors() {
+    let d = deadlock::display_state(&deadlock_state());
+    assert!(d.contains("(0, 1, 0)"));
+    assert!(d.contains("(2, 0, 2)"));
+    assert!(!d.contains("  ,")); // no debug-format padding inside vectors
+}
+
+#[test]
 fn available_is_total_minus_allocated() {
     let rs = banker_state();
     assert_eq!(rs.available(), vec![3, 3, 2]);

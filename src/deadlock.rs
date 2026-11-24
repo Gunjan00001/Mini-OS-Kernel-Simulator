@@ -220,6 +220,12 @@ pub fn try_grant(state: &mut ResourceState, pid: usize, req: &[u32]) -> Result<(
     }
 }
 
+/// Compact vector formatting for the matrix display: `(0, 1, 0)`.
+fn fmt_vec(v: &[u32]) -> String {
+    let parts: Vec<String> = v.iter().map(u32::to_string).collect();
+    format!("({})", parts.join(", "))
+}
+
 /// One-line-per-process dump for menus.
 pub fn display_state(state: &ResourceState) -> String {
     let mut s = String::new();
@@ -229,8 +235,11 @@ pub fn display_state(state: &ResourceState) -> String {
     s.push_str("PID  ALLOCATED        MAX              REQUEST\n");
     for i in 0..state.num_processes() {
         s.push_str(&format!(
-            "{:<4} {:<16?} {:<16?} {:?}\n",
-            i, state.allocated[i], state.max[i], state.request[i]
+            "{:<4} {:<16} {:<16} {}\n",
+            i,
+            fmt_vec(&state.allocated[i]),
+            fmt_vec(&state.max[i]),
+            fmt_vec(&state.request[i])
         ));
     }
     s
