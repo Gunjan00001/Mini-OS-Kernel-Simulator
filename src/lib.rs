@@ -16,4 +16,5 @@ pub mod paging;
 pub mod process;
 pub mod scheduler;
 pub mod sync;
+pub mod theme;
 pub mod ui;
