@@ -190,6 +190,11 @@ pub fn try_grant(state: &mut ResourceState, pid: usize, req: &[u32]) -> Result<(
     if req.len() != state.num_resources() {
         return Err(DeadlockError::BadVector { expected: state.num_resources(), got: req.len() });
     }
+    // A max claim below the current allocation makes the claim undefined;
+    // refuse instead of underflowing on `max - allocated`.
+    if (0..state.num_resources()).any(|r| state.max[pid][r] < state.allocated[pid][r]) {
+        return Err(DeadlockError::InconsistentState);
+    }
     let avail = state.available();
     for (r, &x) in req.iter().enumerate() {
         let need = state.max[pid][r] - state.allocated[pid][r];

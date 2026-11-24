@@ -120,6 +120,20 @@ fn bad_inputs_are_rejected() {
 }
 
 #[test]
+fn inconsistent_state_cannot_be_used_for_a_grant() {
+    let mut rs = ResourceState::new(vec![5], 1);
+    rs.set_process(0, vec![0], vec![5]).unwrap();
+    // Corrupt the state directly (the fields are public library API).
+    rs.allocated[0][0] = 9;
+    rs.max[0][0] = 3;
+    // Must not underflow/panic; must report the inconsistency.
+    assert!(matches!(
+        deadlock::try_grant(&mut rs, 0, &[1]),
+        Err(DeadlockError::InconsistentState)
+    ));
+}
+
+#[test]
 fn available_is_total_minus_allocated() {
     let rs = banker_state();
     assert_eq!(rs.available(), vec![3, 3, 2]);
