@@ -1,0 +1,40 @@
+{
+  "name": "mini-os-kernel-simulator",
+  "version": "1.1.0",
+  "description": "Interactive Mini OS Kernel Simulator in Rust: processes, scheduling, memory, paging, sync, IPC, deadlocks, syscalls.",
+  "license": "MIT",
+  "bin": {
+    "mini-os-kernel": "bin/mini-os-kernel.js",
+    "mini-os-kernel-simulator": "bin/mini-os-kernel.js"
+  },
+  "scripts": {
+    "postinstall": "node bin/install.js",
+    "start": "node bin/mini-os-kernel.js",
+    "test": "cargo test"
+  },
+  "files": [
+    "bin/",
+    "src/",
+    "Cargo.toml",
+    "Cargo.lock",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "operating-systems",
+    "kernel",
+    "simulator",
+    "rust",
+    "scheduler",
+    "paging",
+    "deadlock",
+    "cli"
+  ],
+  "engines": {
+    "node": ">=16"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Gunjan00001/Mini-OS-Kernel-Simulator.git"
+  }
+}
