@@ -4,6 +4,26 @@ All notable changes to this project. Format based on
 [Keep a Changelog](https://keepachangelog.com/). Versioning: `major.minor.bugs`
 — the third number counts bug-fix releases.
 
+## [1.1.1] - 2026-11-25
+
+Screenshot release plus the bugs those screenshots exposed.
+
+### Added
+- Real terminal screenshots in `docs/screenshots/` (12 PNGs), generated from
+  captured sessions by `scripts/capture-screenshots.ps1`.
+- README screenshots section with the highlights plus a collapsible gallery.
+
+### Fixed
+- **kernel**: attaching a page table to a nonexistent pid is now rejected
+  (`Kernel::attach_paging` validates through the process table).
+- **deadlock**: state display printed debug-padded vectors
+  (`[0               , 1, 0]`); rows are now compact `(0, 1, 0)`.
+- **memory**: block labels repeated the pid (`P1 P1 0-300`).
+- **ui**: the race demo claimed "updates lost" even when the nondeterministic
+  race happened not to lose any; the note now reflects the actual run.
+- **docs**: corrected the test count (68, not 76) across README, INSTALL,
+  CHANGELOG and DEVELOPMENT_LOG.
+
 ## [1.1.0] - 2026-11-25
 
 ### Added
@@ -46,7 +66,7 @@ test where testable.
 ### Added
 - Regression tests: empty Gantt, single current process, blocked-sender wake,
   inconsistent deadlock state, failed-fork pid reuse, degenerate
-  producer-consumer, plus the total test count rising 60 → 76.
+  producer-consumer, plus the total test count rising 60 → 66.
 
 ## [1.0.0] - 2026-11-25
 

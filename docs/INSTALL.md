@@ -74,7 +74,7 @@ cd Mini-OS-Kernel-Simulator
 cargo run --release
 ```
 
-Tests: `cargo test` (76 tests).
+Tests: `cargo test` (68 tests).
 
 ## Package-manager registries (how to publish)
 

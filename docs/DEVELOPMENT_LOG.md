@@ -126,7 +126,7 @@ B1, B4, B8 could hang or wedge a demo; B6 could panic in a debug build. All
 fixed with regression tests where the harness can reach them (B1 is
 stdin-dependent; verified manually by piping input).
 
-**Result:** 76 tests green.
+**Result:** 66 tests green.
 
 ---
 
@@ -178,7 +178,8 @@ files.
    mistaken for an auth failure.
 
 **Verification performed:**
-- Clean clone from GitHub → `cargo test` → 76 green.
+- Clean clone from GitHub → `cargo test` → 66 green (68 today, after the
+  screenshot-session tests).
 - `npm pack` → `npm install -g ./mini-os-kernel-simulator-1.1.0.tgz` →
   `mini-os-kernel` runs on this machine (postinstall skipped by npm 11, the
   first-run build path was exercised).
@@ -188,3 +189,41 @@ files.
 
 **Result:** 38 commits, 3 tags, 3 releases, CI workflow testing Linux/Windows/
 macOS on every push.
+
+---
+
+## Session 2 — Screenshots, docs, and the bugs they exposed (v1.1.1)
+
+**What.** Captured 12 real terminal sessions and rendered them to PNGs with a
+committed PowerShell script; added a README screenshot gallery; re-audited
+the code while reviewing the captures.
+
+**Why screenshots from transcripts, not mock-ups.** The simulator is a text
+application; a pipeline that replays scripted input through the real binary
+and renders the captured text is reproducible and cannot drift from actual
+behaviour. `scripts/capture-screenshots.ps1` regenerates every image.
+
+**Failures / bugs found while preparing screenshots:**
+
+1. Page tables could be attached to nonexistent pids — the memory menu called
+   `paging.attach` directly, bypassing kernel validation. **Fix:**
+   `Kernel::attach_paging` validates through the process table (with test).
+2. Deadlock matrix rows printed debug-padded vectors
+   (`[0               , 1, 0]`, caused by `{:<16?}`). **Fix:** compact
+   `(0, 1, 0)` formatting (with test).
+3. Memory block labels repeated the pid (`P1 P1 0-300`). **Fix:** label by
+   process name only.
+4. The race demo printed "updates lost" even in runs where the
+   nondeterministic race happened to lose nothing. **Fix:** the note reflects
+   the actual outcome.
+5. **Docs claimed 76 tests; there were 66 (68 now).** A hand-counting error
+   propagated into README, INSTALL, CHANGELOG and this log. Corrected
+   everywhere; the lesson is to copy counts from `cargo test` output, never
+   from memory.
+6. Screenshot tooling itself: the menu color rule matched "Deadlock
+   Management" (PowerShell `-match` is case-insensitive) and the dashboard
+   crop stopped at the first internal blank line. Fixed with a case-sensitive
+   error pattern and an explicit closing-border marker.
+
+**Verification.** 68 tests green; every rendered PNG inspected; raw
+transcripts retained in `target/shots` (git-ignored) for auditability.
