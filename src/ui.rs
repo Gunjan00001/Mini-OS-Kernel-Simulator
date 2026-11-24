@@ -1,7 +1,7 @@
 //! Terminal interface: main menu, per-module menus, dashboard.
 //! Plain CLI (no Ratatui) -- same content, no extra dependency.
 
-use std::io::{self, Write};
+use std::io::{self, IsTerminal, Write};
 
 use crate::deadlock;
 use crate::kernel::{Kernel, KernelError};
@@ -40,7 +40,15 @@ pub fn ask(prompt: &str) -> String {
             println!("\nInput closed (EOF). Exiting simulator.");
             std::process::exit(0);
         }
-        Ok(_) => line.trim().to_string(),
+        Ok(_) => {
+            let input = line.trim().to_string();
+            if !io::stdin().is_terminal() {
+                // Scripted/piped input is not echoed by the terminal; echo it
+                // so captured transcripts read like a real session.
+                println!("{}", input);
+            }
+            input
+        }
         Err(e) => {
             eprintln!("\nFailed to read input: {e}");
             std::process::exit(1);
@@ -337,8 +345,9 @@ fn memory_menu(k: &mut Kernel) {
             "5" => {
                 let pid = ask_u32("PID:");
                 let size = ask_u32("Address space size (bytes):");
-                let pages = k.paging.attach(pid, size);
-                println!("P{}: page table created, {} pages (page size {}).", pid, pages, k.paging.page_size);
+                if let Some(pages) = report(k.attach_paging(pid, size)) {
+                    println!("P{}: page table created, {} pages (page size {}).", pid, pages, k.paging.page_size);
+                }
             }
             "6" => {
                 let pid = ask_u32("PID:");
