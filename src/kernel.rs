@@ -326,7 +326,10 @@ SYSTEM TIME      : {}
 ============================================",
             if running.is_empty() { "IDLE" } else { "RUNNING" },
             self.scheduler_algo.label(),
-            list(&running),
+            // The state machine does not forbid two manual dispatches, but
+            // the dashboard's "current process" slot is singular: show the
+            // lowest-pid running process.
+            running.first().map(String::as_str).unwrap_or("-"),
             list(&ready),
             list(&waiting),
             total,

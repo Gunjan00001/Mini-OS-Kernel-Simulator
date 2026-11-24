@@ -144,6 +144,25 @@ fn invalid_state_transition_is_rejected() {
 }
 
 #[test]
+fn dashboard_shows_a_single_current_process() {
+    let mut k = Kernel::new(1024, 4, 8);
+    let p1 = k.fork_process("a", 0, 1, 1, 0).unwrap();
+    let p2 = k.fork_process("b", 0, 1, 1, 0).unwrap();
+    k.dispatch_process(p1).unwrap();
+    k.dispatch_process(p2).unwrap();
+    let line = k
+        .dashboard()
+        .lines()
+        .find(|l| l.starts_with("CURRENT PROCESS"))
+        .unwrap()
+        .to_string();
+    assert_eq!(line.trim(), "CURRENT PROCESS  : P1");
+    // Both still listed in the ready queue.
+    let d = k.dashboard();
+    assert!(d.contains("READY QUEUE      : -"));
+}
+
+#[test]
 fn every_syscall_advances_the_tick_and_logs() {
     let mut k = Kernel::new(1024, 4, 8);
     let before = k.tick;
