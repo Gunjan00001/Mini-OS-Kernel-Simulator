@@ -110,10 +110,15 @@ impl Ipc {
         Ok(())
     }
 
-    /// Receive the oldest message (FIFO) from a queue.
+    /// Receive the oldest message (FIFO) from a queue. A successful receive
+    /// frees a slot, so the longest-blocked sender is marked unblocked.
     pub fn receive(&mut self, queue: u32) -> Result<Message, IpcError> {
         let q = self.queues.get_mut(&queue).ok_or(IpcError::UnknownQueue(queue))?;
-        q.messages.pop_front().ok_or(IpcError::QueueEmpty(queue))
+        let msg = q.messages.pop_front().ok_or(IpcError::QueueEmpty(queue))?;
+        if !q.blocked_senders.is_empty() {
+            q.blocked_senders.remove(0);
+        }
+        Ok(msg)
     }
 
     /// Create a shared memory region of `size` bytes. Returns its id (R1, ...).

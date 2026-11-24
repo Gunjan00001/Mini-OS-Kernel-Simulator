@@ -41,6 +41,24 @@ fn full_queue_records_blocked_sender() {
 }
 
 #[test]
+fn receiving_wakes_a_blocked_sender() {
+    let mut k = Kernel::new(1024, 4, 8);
+    let p1 = k.fork_process("P1", 0, 1, 1, 0).unwrap();
+    let p2 = k.fork_process("P2", 0, 1, 1, 0).unwrap();
+    let q = k.ipc.create_queue(1);
+    k.send_message(p1, q, p2, "m1").unwrap();
+    assert!(k.send_message(p1, q, p2, "m2").is_err()); // blocked
+    assert_eq!(k.ipc.queues[&q].blocked_senders, vec![p1]);
+    k.receive_message(q, p2).unwrap();
+    // Space was freed: the blocked sender is no longer marked blocked...
+    assert!(k.ipc.queues[&q].blocked_senders.is_empty());
+    // ...and the event is in the kernel log.
+    assert!(k.events().iter().any(|e| e.msg.contains("blocked sender was woken")));
+    // Now the retry succeeds.
+    k.send_message(p1, q, p2, "m2").unwrap();
+}
+
+#[test]
 fn empty_queue_reports_empty() {
     let mut k = Kernel::new(1024, 4, 8);
     k.fork_process("P1", 0, 1, 1, 0).unwrap();

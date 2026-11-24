@@ -243,8 +243,26 @@ impl Kernel {
     /// `receive_message()`: dequeue the oldest message from a queue.
     pub fn receive_message(&mut self, queue: u32, pid: u32) -> Result<Message, KernelError> {
         self.require_pid(pid)?;
+        let blocked_before = self
+            .ipc
+            .queues
+            .get(&queue)
+            .map(|q| q.blocked_senders.len())
+            .unwrap_or(0);
         let msg = self.ipc.receive(queue)?;
         self.log(format!("P{} received message from P{} via Q{}", pid, msg.from, queue));
+        let blocked_after = self
+            .ipc
+            .queues
+            .get(&queue)
+            .map(|q| q.blocked_senders.len())
+            .unwrap_or(0);
+        if blocked_after < blocked_before {
+            self.log(format!(
+                "Queue Q{} had space: a blocked sender was woken ({} still blocked)",
+                queue, blocked_after
+            ));
+        }
         Ok(msg)
     }
 
