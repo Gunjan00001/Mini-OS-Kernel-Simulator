@@ -10,6 +10,34 @@ are data structures advanced by ticks, not real threads. Real OS threads are
 used in exactly one place: the synchronization demos, where showing genuine
 concurrency is the point.
 
+<img src="docs/screenshots/01-main-menu.png" alt="Main menu" width="620">
+
+## Screenshots
+
+Real captured sessions: every PNG below is rendered from an actual terminal
+transcript produced by `scripts/capture-screenshots.ps1` (committed, so the
+shots are reproducible).
+
+| SRTF scheduling | Algorithm comparison |
+|---|---|
+| <img src="docs/screenshots/03-srtf-scheduling.png" width="460"> | <img src="docs/screenshots/04-algorithm-comparison.png" width="460"> |
+
+| Banker's Algorithm | Kernel dashboard |
+|---|---|
+| <img src="docs/screenshots/10-deadlock-banker.png" width="460"> | <img src="docs/screenshots/12-kernel-dashboard.png" width="460"> |
+
+<details>
+<summary>More screenshots: process table, memory map, paging, sync, IPC, detection</summary>
+
+| | |
+|---|---|
+| <img src="docs/screenshots/02-process-management.png" width="460"> | <img src="docs/screenshots/05-memory-map.png" width="460"> |
+| <img src="docs/screenshots/06-paging-translation.png" width="460"> | <img src="docs/screenshots/07-page-replacement.png" width="460"> |
+| <img src="docs/screenshots/08-synchronization.png" width="460"> | <img src="docs/screenshots/09-ipc.png" width="460"> |
+| <img src="docs/screenshots/11-deadlock-detection.png" width="460"> | |
+
+</details>
+
 ## Install
 
 ```sh
@@ -38,7 +66,7 @@ Then run `mini-os-kernel` (or `cargo run`). Every option is in
 
 ```sh
 cargo run --release
-cargo test          # 76 tests
+cargo test          # 68 tests
 ```
 
 Zero external dependencies — the whole simulator is standard library only.
