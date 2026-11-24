@@ -33,8 +33,19 @@ pub fn ask(prompt: &str) -> String {
     print!("{} ", prompt);
     io::stdout().flush().unwrap();
     let mut line = String::new();
-    io::stdin().read_line(&mut line).unwrap();
-    line.trim().to_string()
+    match io::stdin().read_line(&mut line) {
+        // EOF (piped input exhausted / Ctrl+Z): no more commands can arrive,
+        // so exit instead of retrying forever on an empty string.
+        Ok(0) => {
+            println!("\nInput closed (EOF). Exiting simulator.");
+            std::process::exit(0);
+        }
+        Ok(_) => line.trim().to_string(),
+        Err(e) => {
+            eprintln!("\nFailed to read input: {e}");
+            std::process::exit(1);
+        }
+    }
 }
 
 pub fn ask_u32(prompt: &str) -> u32 {
