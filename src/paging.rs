@@ -234,6 +234,9 @@ impl PagedMemory {
 /// Offline page-replacement simulation over a known reference string.
 /// Returns (faults, hits). This is where true Optimal is computed.
 pub fn simulate_replacement(reference: &[u32], num_frames: usize, algo: Replacement) -> (u64, u64) {
+    // A zero frame pool would make victim selection panic; one frame is the
+    // smallest meaningful configuration.
+    let num_frames = num_frames.max(1);
     let mut frames: Vec<u32> = Vec::new(); // resident pages, load order
     let mut last_used: BTreeMap<u32, usize> = BTreeMap::new();
     let (mut faults, mut hits) = (0u64, 0u64);

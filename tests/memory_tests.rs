@@ -204,6 +204,18 @@ fn fifo_exhibits_beladys_anomaly_here() {
 }
 
 #[test]
+fn zero_frames_does_not_panic() {
+    // The menu accepts any frame count; zero must degrade to one frame
+    // instead of panicking in victim selection.
+    let (faults, hits) = paging::simulate_replacement(&BELADY, 0, Replacement::Fifo);
+    assert_eq!(faults + hits, BELADY.len() as u64);
+    let (faults, _) = paging::simulate_replacement(&BELADY, 0, Replacement::Lru);
+    assert!(faults > 0);
+    let (faults, _) = paging::simulate_replacement(&BELADY, 0, Replacement::Optimal);
+    assert!(faults > 0);
+}
+
+#[test]
 fn empty_reference_string_is_zero_faults() {
     let (faults, hits) = paging::simulate_replacement(&[], 3, Replacement::Fifo);
     assert_eq!((faults, hits), (0, 0));
