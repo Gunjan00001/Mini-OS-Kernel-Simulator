@@ -186,26 +186,43 @@ impl PagedMemory {
         frame
     }
 
-    /// ASCII frame table.
+    /// Colorized frame table.
     pub fn display(&self) -> String {
+        use crate::theme::{paint, pid_fg, CYAN, DIM, GREEN};
         let mut s = format!(
-            "PAGING (page size {}, {} frames, {} used)\n",
-            self.page_size,
-            self.total_frames,
-            self.used_frames()
+            "{}\n",
+            paint(
+                &format!(
+                    "PAGING (page size {}, {} frames, {} used)",
+                    self.page_size,
+                    self.total_frames,
+                    self.used_frames()
+                ),
+                &format!("{CYAN}\x1b[1m")
+            )
         );
-        s.push_str("FRAME  CONTENT\n");
+        s.push_str(&paint("FRAME  CONTENT", &format!("{CYAN}\x1b[1m")));
+        s.push('\n');
         for (i, f) in self.frames.iter().enumerate() {
             let content = match f {
-                Some(u) => format!("P{} page {}", u.pid, u.page),
-                None => "FREE".to_string(),
+                Some(u) => paint(&format!("P{} page {}", u.pid, u.page), pid_fg(u.pid)),
+                None => paint("FREE", GREEN),
             };
-            s.push_str(&format!("{:<7}{}\n", i, content));
+            s.push_str(&format!("{}\n", format!("{:<7}{}", paint(&i.to_string(), DIM), content)));
         }
         s.push_str(&format!(
-            "Page faults: {}  Page hits: {}  Internal fragmentation: {}\n",
-            self.faults,
-            self.hits,
+            "{} {}  {} {}\n",
+            paint("Page faults:", CYAN),
+            paint(
+                &self.faults.to_string(),
+                if self.faults > 0 { "\x1b[31m" } else { DIM }
+            ),
+            paint("Page hits:", CYAN),
+            paint(&self.hits.to_string(), GREEN)
+        ));
+        s.push_str(&format!(
+            "{} {}\n",
+            paint("Internal fragmentation:", CYAN),
             self.internal_fragmentation()
         ));
         s
