@@ -316,6 +316,8 @@ impl Kernel {
     // ---- dashboard ----
 
     pub fn dashboard(&self) -> String {
+        use crate::theme::{self, paint, BOLD, CYAN, DIM, GREEN, RED, YELLOW};
+
         let pids_in = |st: State| -> Vec<String> {
             self.processes
                 .values()
@@ -328,52 +330,109 @@ impl Kernel {
         let waiting = pids_in(State::Waiting);
         let total = self.processes.len();
         let active = self.processes.values().filter(|p| p.state != State::Terminated).count();
-        let list = |v: &[String]| if v.is_empty() { "-".to_string() } else { v.join(", ") };
+        let list = |v: &[String]| -> String {
+            if v.is_empty() {
+                paint("-", DIM)
+            } else {
+                let colored: Vec<String> = v
+                    .iter()
+                    .map(|pid| {
+                        let n = pid.trim_start_matches('P');
+                        paint(pid, theme::pid_fg(n.parse().unwrap_or(0)))
+                    })
+                    .collect();
+                colored.join(", ")
+            }
+        };
         let (used, free) = (self.memory.used(), self.memory.free_bytes());
         let (faults, hits) = (self.paging.faults, self.paging.hits);
+        let (faults_s, hits_s) = (
+            paint(&faults.to_string(), if faults > 0 { RED } else { DIM }),
+            paint(&hits.to_string(), GREEN),
+        );
+        let pct = if self.memory.total == 0 {
+            0
+        } else {
+            used * 100 / self.memory.total
+        };
+        let border = paint("╔════════════════════════════════════════════════════════╗", CYAN);
+        let bottom = paint("╚════════════════════════════════════════════════════════╝", CYAN);
+        let title = paint(
+            "║                  KERNEL DASHBOARD                      ║",
+            CYAN,
+        );
+        let memory_header = paint("MEMORY", &format!("{BOLD}{CYAN}"));
+        let paging_header = paint("PAGING", &format!("{BOLD}{CYAN}"));
         format!(
-"============= KERNEL DASHBOARD =============
-CPU STATUS       : {}
-SCHEDULER        : {}
-CURRENT PROCESS  : {}
-READY QUEUE      : {}
-WAITING PROCESSES: {}
+"{border}
+{title}
+{bottom}
+{}{}
+{}{}
+{}{}
+{}{}
+{}{}
 
-TOTAL PROCESSES  : {}
-ACTIVE PROCESSES : {}
+{}{}
+{}{}
 
-MEMORY
-Total            : {} units
-Used             : {}
-Free             : {}
-Largest free hole: {}
+{}
+{}{}
+{}{}
+{}{}
+{}{}
+{}{}
 
-PAGING
-Frames used      : {}/{}
-Page faults      : {}
-Page hits        : {}
+{}
+{}{}
+{}{}
+{}{}
 
-SYSTEM TIME      : {}
-============================================",
-            if running.is_empty() { "IDLE" } else { "RUNNING" },
-            self.scheduler_algo.label(),
+{}{}
+{bottom}",
+            paint("CPU STATUS       : ", CYAN),
+            paint(
+                if running.is_empty() { "IDLE" } else { "RUNNING" },
+                if running.is_empty() { DIM } else { GREEN },
+            ),
+            paint("SCHEDULER        : ", CYAN),
+            paint(&self.scheduler_algo.label(), YELLOW),
+            paint("CURRENT PROCESS  : ", CYAN),
             // The state machine does not forbid two manual dispatches, but
             // the dashboard's "current process" slot is singular: show the
             // lowest-pid running process.
-            running.first().map(String::as_str).unwrap_or("-"),
+            match running.first() {
+                Some(pid) => paint(pid, theme::pid_fg(pid.trim_start_matches('P').parse().unwrap_or(0))),
+                None => paint("-", DIM),
+            },
+            paint("READY QUEUE      : ", CYAN),
             list(&ready),
+            paint("WAITING PROCESSES: ", CYAN),
             list(&waiting),
-            total,
-            active,
-            self.memory.total,
-            used,
-            free,
-            self.memory.largest_free_hole(),
-            self.paging.used_frames(),
-            self.paging.total_frames,
-            faults,
-            hits,
-            self.tick,
+            paint("TOTAL PROCESSES  : ", CYAN),
+            paint(&total.to_string(), YELLOW),
+            paint("ACTIVE PROCESSES : ", CYAN),
+            paint(&active.to_string(), GREEN),
+            memory_header,
+            paint("Total            : ", CYAN),
+            paint(&format!("{} units", self.memory.total), DIM),
+            paint("Used             : ", CYAN),
+            paint(&used.to_string(), YELLOW),
+            paint("Free             : ", CYAN),
+            paint(&free.to_string(), GREEN),
+            paint("Largest free hole: ", CYAN),
+            self.memory.largest_free_hole().to_string(),
+            paint("Memory usage     : ", CYAN),
+            format!("{} {}%", theme::bar(used, self.memory.total, 24), paint(&pct.to_string(), YELLOW)),
+            paging_header,
+            paint("Frames used      : ", CYAN),
+            format!("{}/{}", self.paging.used_frames(), self.paging.total_frames),
+            paint("Page faults      : ", CYAN),
+            faults_s,
+            paint("Page hits        : ", CYAN),
+            hits_s,
+            paint("SYSTEM TIME      : ", CYAN),
+            paint(&self.tick.to_string(), &format!("{BOLD}{YELLOW}")),
         )
     }
 }
