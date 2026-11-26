@@ -91,6 +91,15 @@ fn worst_fit_takes_biggest_hole() {
 }
 
 #[test]
+fn external_fragmentation_is_free_minus_largest_hole() {
+    let m = mm_with_two_holes();
+    // Free = 10 + 20, largest hole = 20, so 10 units are stranded.
+    assert_eq!(m.free_bytes(), 30);
+    assert_eq!(m.largest_free_hole(), 20);
+    assert_eq!(m.external_fragmentation(), 10);
+}
+
+#[test]
 fn freeing_unknown_pid_errors() {
     let mut m = MemoryManager::new(100);
     assert!(matches!(m.free(7), Err(MemError::NoAllocation(7))));
