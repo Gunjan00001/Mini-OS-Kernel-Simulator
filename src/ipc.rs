@@ -3,13 +3,18 @@
 use std::collections::{BTreeMap, VecDeque};
 use std::fmt;
 
+/// One message in a bounded queue.
 #[derive(Debug, Clone)]
 pub struct Message {
+    /// Sending process id.
     pub from: u32,
+    /// Intended receiver process id.
     pub to: u32,
+    /// Message payload.
     pub body: String,
 }
 
+/// Errors returned by queues and shared-memory regions.
 #[derive(Debug)]
 pub enum IpcError {
     UnknownQueue(u32),
@@ -38,6 +43,11 @@ impl fmt::Display for IpcError {
     }
 }
 
+/// Bounded FIFO message queue.
+///
+/// A send on a full queue is rejected *and* recorded in `blocked_senders`, so
+/// the UI can show which process would have blocked. A successful receive
+/// removes the oldest blocked sender.
 #[derive(Debug)]
 pub struct MessageQueue {
     pub capacity: usize,
@@ -68,6 +78,10 @@ impl MessageQueue {
     }
 }
 
+/// IPC subsystem: message queues and shared-memory regions, keyed by id.
+///
+/// Queue and region ids share one counter so displays can use unambiguous
+/// `Q1`/`R2` labels.
 pub struct Ipc {
     pub queues: BTreeMap<u32, MessageQueue>,
     pub regions: BTreeMap<u32, Vec<u8>>,
@@ -81,10 +95,12 @@ impl Default for Ipc {
 }
 
 impl Ipc {
+    /// Start with no queues or regions.
     pub fn new() -> Self {
         Ipc { queues: BTreeMap::new(), regions: BTreeMap::new(), next_id: 1 }
     }
 
+    /// Monotonic id shared by queues and regions.
     fn alloc_id(&mut self) -> u32 {
         let id = self.next_id;
         self.next_id += 1;
@@ -128,6 +144,8 @@ impl Ipc {
         id
     }
 
+    /// Write `data` at `offset`. The whole write must fit in one region;
+    /// partial writes are rejected rather than silently truncated.
     pub fn write_region(&mut self, region: u32, offset: usize, data: &[u8]) -> Result<(), IpcError> {
         let buf = self.regions.get_mut(&region).ok_or(IpcError::UnknownRegion(region))?;
         if offset.saturating_add(data.len()) > buf.len() {
@@ -137,6 +155,7 @@ impl Ipc {
         Ok(())
     }
 
+    /// Copy `len` bytes starting at `offset` out of a region.
     pub fn read_region(&self, region: u32, offset: usize, len: usize) -> Result<Vec<u8>, IpcError> {
         let buf = self.regions.get(&region).ok_or(IpcError::UnknownRegion(region))?;
         if offset.saturating_add(len) > buf.len() {

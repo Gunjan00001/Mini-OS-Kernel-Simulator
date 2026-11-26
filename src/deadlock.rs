@@ -7,14 +7,22 @@ use std::fmt;
 
 /// Global resource state: totals, current allocations, declared maximum
 /// claims, and outstanding requests (used by deadlock detection).
+///
+/// All matrices are `[pid][resource]`; every row has one entry per resource
+/// type in `total`.
 #[derive(Debug, Clone)]
 pub struct ResourceState {
+    /// Instances of each resource type in the system.
     pub total: Vec<u32>,
+    /// `allocated[pid][res]`: instances currently held by each process.
     pub allocated: Vec<Vec<u32>>,
+    /// `max[pid][res]`: the process's declared maximum claim.
     pub max: Vec<Vec<u32>>,
+    /// `request[pid][res]`: outstanding requests used by detection.
     pub request: Vec<Vec<u32>>,
 }
 
+/// Errors returned by the Banker's/detection layer.
 #[derive(Debug)]
 pub enum DeadlockError {
     InvalidPid(usize),
@@ -70,10 +78,12 @@ impl ResourceState {
         avail
     }
 
+    /// Number of processes in the scenario.
     pub fn num_processes(&self) -> usize {
         self.allocated.len()
     }
 
+    /// Number of resource types in the scenario.
     pub fn num_resources(&self) -> usize {
         self.total.len()
     }
@@ -94,6 +104,10 @@ impl ResourceState {
         Ok(())
     }
 
+    /// Replace a process's outstanding request vector.
+    ///
+    /// The request is data for detection only; `bankers` and `try_grant`
+    /// use the remaining claim (`max - allocated`) instead.
     pub fn set_request(&mut self, pid: usize, request: Vec<u32>) -> Result<(), DeadlockError> {
         if pid >= self.request.len() {
             return Err(DeadlockError::InvalidPid(pid));
@@ -108,6 +122,11 @@ impl ResourceState {
 
 /// Banker's Algorithm safety check. Returns whether the state is safe and a
 /// valid safe sequence (empty if unsafe).
+///
+/// Sweep invariant: `work` holds the resources that could be available after
+/// every already-finished process releases its allocation. A process can
+/// finish when its remaining claim fits in `work`; repeating the sweep until
+/// no more progress is the textbook O(n^2 * m) safety check.
 pub fn bankers(state: &ResourceState) -> Safety {
     let (n, m) = (state.num_processes(), state.num_resources());
     let mut work = state.available();
@@ -146,8 +165,10 @@ pub fn bankers(state: &ResourceState) -> Safety {
     Safety { safe: sequence.len() == n, sequence }
 }
 
+/// Verdict returned by [`bankers`].
 #[derive(Debug, Clone)]
 pub struct Safety {
+    /// True when every process appears in `sequence`.
     pub safe: bool,
     /// Process indices in a valid safe order (empty when unsafe).
     pub sequence: Vec<usize>,
