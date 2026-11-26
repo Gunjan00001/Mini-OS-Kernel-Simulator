@@ -4,6 +4,22 @@ All notable changes to this project. Format based on
 [Keep a Changelog](https://keepachangelog.com/). Versioning: `major.minor.bugs`
 — the third number counts bug-fix releases.
 
+## [Unreleased]
+
+### Added
+- Source documentation pass: module-level `//!` headers, rustdoc comments on
+  public structs/fields/functions, and inline comments at non-obvious
+  algorithm steps (scheduler tie-breaking, allocation splitting/coalescing,
+  page eviction bookkeeping, Banker's rollback).
+- `README.md` "Source documentation" section and the `cargo doc --open
+  --no-deps` command; module layout now includes `theme.rs`.
+
+### Changed
+- Report and slide deck refreshed with the course code (`24B41EC311`) and team
+  roll numbers.
+- Report PDF removed; the DOCX is the tracked source and PDFs are export
+  copies, so a stale PDF cannot contradict the document.
+
 ## [1.2.2] - 2026-11-25
 
 ### Fixed

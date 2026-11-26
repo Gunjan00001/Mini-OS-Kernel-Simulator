@@ -331,3 +331,28 @@ Banker's Algorithm and dashboard. Timing follows the bundled music cue sheet
 
 **Verification.** 69 tests green, zero clippy warnings, video check passed
 before rendering, poster and decoded frames inspected.
+
+---
+
+## Session 6 — Documentation and source-comment pass
+
+**What.** Reviewed every module and added the comments a reviewer needs:
+module headers, rustdoc on public structs/fields/functions, and inline
+comments at the steps that encode an invariant — SRTF tie-breaking, hole
+splitting/coalescing, FIFO load order, LRU stamps, victim bookkeeping,
+blocked-sender wakeup and Banker's rollback. The integration tests now state
+their scope and which textbook fixture they exercise. `README.md` gained a
+"Source documentation" section and the `cargo doc` command;
+`docs/architecture.md` gained a reading order.
+
+**Why.** Comments explain *why* and which invariant holds, not what the code
+already says. Anyone opening a module during review should understand the
+model without tracing the entire call graph first.
+
+**Docs refresh.** The report and slide deck now carry the course code
+(24B41EC311) and team roll numbers; the report PDF was removed because it no
+longer matched the edited DOCX. The Office files are the tracked sources and
+PDFs are treated as export copies.
+
+**Verification.** 69 tests green, `cargo clippy --all-targets -- -D warnings`
+clean, `cargo doc --no-deps` builds without warnings. No behaviour changed.
