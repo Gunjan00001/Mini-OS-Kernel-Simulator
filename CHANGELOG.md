@@ -13,6 +13,9 @@ All notable changes to this project. Format based on
   page eviction bookkeeping, Banker's rollback).
 - `README.md` "Source documentation" section and the `cargo doc --open
   --no-deps` command; module layout now includes `theme.rs`.
+- Four edge-case tests: empty-kernel dashboard is read-only, IPC summary
+  contents, direct simulated-semaphore P/V behaviour, and external
+  fragmentation arithmetic. Test suite is now 73.
 
 ### Changed
 - Report and slide deck refreshed with the course code (`24B41EC311`) and team

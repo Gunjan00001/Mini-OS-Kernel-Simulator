@@ -217,7 +217,7 @@ def build_ppt():
     textbox(slide, Inches(0.95), Inches(5.0), Inches(11.5), Inches(0.4), REPO, 12, GREEN, font=MONO)
     add_picture_fit(slide, "01-main-menu.png", right_margin=0.55, top=4.35, max_w=4.4, max_h=2.2)
     textbox(slide, Inches(0.95), Inches(6.75), Inches(9.0), Inches(0.3),
-            "69 automated tests  ·  CI on Linux, Windows and macOS  ·  zero external dependencies", 11, MUTED)
+            "73 automated tests  ·  CI on Linux, Windows and macOS  ·  zero external dependencies", 11, MUTED)
 
     # 2 what it is
     slide = new_slide(prs)
@@ -428,7 +428,7 @@ def build_ppt():
     slide = new_slide(prs)
     slide_header(slide, "QUALITY", "Tests and engineering discipline")
     stats = [
-        ("69", "automated tests", GREEN),
+        ("73", "automated tests", GREEN),
         ("3", "CI operating systems", CYAN),
         ("0", "external dependencies", YELLOW),
         ("100%", "Rust standard library", MAGENTA),
@@ -508,7 +508,7 @@ def build_ppt():
     textbox(slide, Inches(1.0), Inches(4.2), Inches(11.2), Inches(0.4), "Repository:", 13, MUTED)
     textbox(slide, Inches(1.0), Inches(4.55), Inches(11.2), Inches(0.5), REPO, 18, GREEN, font=MONO)
     textbox(slide, Inches(1.0), Inches(5.6), Inches(11.2), Inches(0.4),
-            "Mini OS Kernel Simulator  ·  Rust  ·  " + "69 tests, all green", 12, MUTED)
+            "Mini OS Kernel Simulator  ·  Rust  ·  " + "73 tests, all green", 12, MUTED)
 
     OUT_PPT.parent.mkdir(parents=True, exist_ok=True)
     prs.save(str(OUT_PPT))
@@ -604,7 +604,7 @@ def build_report():
               "avoidance and detection, and a simulated system call interface. The simulator is a "
               "discrete event system. Simulated processes advance by deterministic ticks, so every "
               "menu run is reproducible. The interface is a colorized terminal with menus, tables, "
-              "charts and a dashboard. Correctness is guarded by 69 automated tests that encode hand "
+              "charts and a dashboard. Correctness is guarded by 73 automated tests that encode hand "
               "computed schedules, known page replacement counts, and textbook deadlock examples.")
     para(doc, "The implementation uses only the Rust standard library and has zero external "
               "dependencies. Continuous integration runs the full test suite on Linux, Windows and "
@@ -718,7 +718,7 @@ def build_report():
               "time.")
 
     add_heading(doc, "4. Testing and correctness", 1)
-    para(doc, "The project contains 69 integration tests across five suites plus the library build. "
+    para(doc, "The project contains 73 integration tests across five suites plus the library build. "
               "Highlights:")
     bullet(doc, "Process tests", "creation, termination, legal and illegal transitions, failed fork behavior, page table validation.")
     bullet(doc, "Scheduler tests", "hand computed timelines and metrics for every algorithm, quantum clamping, zero burst and empty workloads.")
@@ -752,7 +752,7 @@ def build_report():
     bullet(doc, "Synchronization", "run the real thread race twice, show that the racy result can be short, then show the mutex result always equals the expected count.")
     bullet(doc, "IPC", "create a queue of capacity two, send three messages, show the blocked sender, receive one and show the wake event.")
     bullet(doc, "Deadlock", "load the safe scenario and run Banker's Algorithm, request resources, then load the deadlock scenario and run detection.")
-    bullet(doc, "Finish", "open the dashboard, show that system time equals the number of logged events, and mention the 69 tests and the CI matrix.")
+    bullet(doc, "Finish", "open the dashboard, show that system time equals the number of logged events, and mention the 73 tests and the CI matrix.")
 
     add_heading(doc, "7. Limitations and future work", 1)
     para(doc, "Simulated processes are data structures, not isolated user programs. Scheduling runs "

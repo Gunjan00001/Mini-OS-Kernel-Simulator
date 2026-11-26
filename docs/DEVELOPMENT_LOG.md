@@ -354,5 +354,7 @@ model without tracing the entire call graph first.
 longer matched the edited DOCX. The Office files are the tracked sources and
 PDFs are treated as export copies.
 
-**Verification.** 69 tests green, `cargo clippy --all-targets -- -D warnings`
-clean, `cargo doc --no-deps` builds without warnings. No behaviour changed.
+**Verification.** 73 tests green (four new edge-case tests: empty dashboard,
+IPC summary, direct semaphore P/V, external fragmentation),
+`cargo clippy --all-targets -- -D warnings` clean, `cargo doc --no-deps`
+builds without warnings. No behaviour changed.

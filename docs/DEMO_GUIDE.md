@@ -119,7 +119,7 @@ Back on the main menu, choose `8`. The dashboard shows the CPU status, the
 scheduler, queues, memory usage bar, page fault counters and system time.
 System time equals the number of logged kernel events.
 
-Close with: "The repository has 68 automated tests, CI on three operating
+Close with: "The repository has 73 automated tests, CI on three operating
 systems, and zero external dependencies. The presentation and report are in
 the docs folder."
 
@@ -143,4 +143,4 @@ the docs folder."
 
 1. Show the matching screenshot on the presentation slides.
 2. Rebuild quickly with `cargo run --release`.
-3. As a last resort, `docker run it mini-os-kernel` from a built image.
+3. As a last resort, `docker run -it --rm mini-os-kernel` from a built image.
