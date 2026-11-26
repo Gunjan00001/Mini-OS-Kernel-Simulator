@@ -1,3 +1,8 @@
+//! Banker's Algorithm, deadlock detection and safety-checked grant tests.
+//!
+//! Both fixtures are the classic Silberschatz examples, so the expected safe
+//! sequence length and deadlocked pid set are independently verifiable.
+
 use mini_os_kernel::deadlock::{self, DeadlockError, ResourceState};
 
 /// Silberschatz classic Banker's example (safe).

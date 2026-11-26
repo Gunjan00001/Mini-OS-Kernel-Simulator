@@ -1,3 +1,9 @@
+//! Process lifecycle and kernel syscall tests.
+//!
+//! Covers the legal/illegal transition matrix, fork/exit resource handling,
+//! failed-fork pid reuse, dashboard state, paging attachment validation and
+//! the event-log invariant (every syscall advances the tick).
+
 use mini_os_kernel::kernel::Kernel;
 use mini_os_kernel::process::{Process, State};
 

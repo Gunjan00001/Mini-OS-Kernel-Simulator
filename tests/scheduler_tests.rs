@@ -1,3 +1,9 @@
+//! CPU scheduling tests with hand-computed timelines and metrics.
+//!
+//! Every expected number here was derived by hand from the textbook rules,
+//! not copied from the implementation. That is what makes these tests useful:
+//! a regression in an algorithm or a metric formula changes the timeline.
+
 use mini_os_kernel::process::Process;
 use mini_os_kernel::scheduler::{self, Algorithm, ScheduleResult};
 

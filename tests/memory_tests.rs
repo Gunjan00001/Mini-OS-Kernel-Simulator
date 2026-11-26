@@ -1,3 +1,9 @@
+//! Contiguous allocation, paging and page-replacement tests.
+//!
+//! The fixtures are chosen to distinguish the three fit strategies, exercise
+//! coalescing across non-adjacent holes, and check Belady's reference string
+//! (including the famous FIFO anomaly) against the textbook fault counts.
+
 use mini_os_kernel::memory::{FitStrategy, MemError, MemoryManager};
 use mini_os_kernel::paging::{self, PagedMemory, Replacement};
 

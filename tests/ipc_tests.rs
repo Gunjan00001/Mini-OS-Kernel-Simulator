@@ -1,3 +1,10 @@
+//! IPC and synchronization demo tests.
+//!
+//! Queue tests cover FIFO delivery, capacity limits and blocked-sender wakeup;
+//! shared-memory tests cover bounds checks. The sync tests assert the two
+//! properties the demos claim: a mutex count is exact and the bounded
+//! producer-consumer pipeline loses no messages.
+
 use mini_os_kernel::ipc::IpcError;
 use mini_os_kernel::kernel::Kernel;
 use mini_os_kernel::sync;
