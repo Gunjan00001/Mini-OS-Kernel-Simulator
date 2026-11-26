@@ -74,3 +74,12 @@ real ring transitions.
   remaining claims, detection uses the request matrix. `try_grant` performs
   a tentative grant and rolls back if the resulting state is unsafe.
 - **CLI over Ratatui**: same information, zero dependency risk.
+
+## Reading the source
+
+Start with `src/lib.rs` for the module map, then `kernel.rs` for ownership and
+the system-call layer, then the subsystem you care about. Every module opens
+with a `//!` header stating its responsibility and invariants; public items
+carry rustdoc comments, and the non-obvious algorithm steps have inline
+comments. `cargo doc --open --no-deps` renders the same comments as a
+browsable API reference.

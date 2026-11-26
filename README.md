@@ -73,9 +73,25 @@ Then run `mini-os-kernel` (or `cargo run`). Every option is in
 ```sh
 cargo run --release
 cargo test          # 69 tests
+cargo doc --open --no-deps   # API reference generated from the source comments
 ```
 
 Zero external dependencies — the whole simulator is standard library only.
+
+## Source documentation
+
+The code is written to be read during review:
+
+- every module starts with a `//!` header stating its responsibility and the
+  invariants it relies on;
+- public structs, fields and functions carry rustdoc comments;
+- the scheduling, paging, allocator and deadlock code has inline comments at
+  the non-obvious steps (tie-breaking, coalescing, eviction bookkeeping,
+  rollback);
+- `docs/architecture.md` and `docs/algorithms.md` give the high-level tour.
+
+`cargo doc --open --no-deps` builds a browsable API reference from those
+comments.
 
 ## Versioning and logs
 
@@ -142,6 +158,7 @@ src/
 ├── sync.rs        race/producer-consumer demos (real threads), simulated semaphore
 ├── ipc.rs         bounded message queues, shared memory
 ├── deadlock.rs    Banker's Algorithm, deadlock detection, safety-checked grants
+├── theme.rs       zero-dependency ANSI colors + Windows VT setup
 └── ui.rs          menus + dashboard (plain CLI)
 tests/
 ├── process_tests.rs    creation, termination, transitions, kernel edge cases
@@ -160,9 +177,12 @@ development history.
 - [`docs/presentation/MiniOSKernel_Simulator.pptx`](docs/presentation/MiniOSKernel_Simulator.pptx)
   (17 slides, colorized; PDF alongside)
 - [`docs/report/MiniOSKernel_Simulator_Report.docx`](docs/report/MiniOSKernel_Simulator_Report.docx)
-  (11 pages; PDF alongside)
+  (11 pages)
 - [`docs/DEMO_GUIDE.md`](docs/DEMO_GUIDE.md) five minute live demo script
 - Regenerate both with `python scripts/make_docs.py`
+
+The Office files are the sources; a PDF is an export copy. Re-export the PDF
+after editing a document so the two do not drift.
 
 ## Packaging files
 
