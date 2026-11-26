@@ -116,7 +116,32 @@ fn shared_memory_bounds_are_checked() {
     ));
 }
 
+#[test]
+fn ipc_summary_lists_queues_and_regions() {
+    let mut k = Kernel::new(1024, 4, 8);
+    assert!(k.ipc.summary().contains("No queues"));
+    let q = k.ipc.create_queue(2);
+    let r = k.ipc.create_region(8);
+    let summary = k.ipc.summary();
+    assert!(summary.contains(&format!("Q{q}")));
+    assert!(summary.contains(&format!("R{r}")));
+    assert!(summary.contains("shared memory"));
+}
+
 // ---------- synchronization demos ----------
+
+#[test]
+fn simulated_semaphore_blocks_at_zero_and_recovers() {
+    let mut sem = sync::SimSemaphore::new(1);
+    assert_eq!(sem.count(), 1);
+    sem.wait().unwrap();
+    assert_eq!(sem.count(), 0);
+    assert!(sem.wait().is_err()); // would block, count stays zero
+    assert_eq!(sem.count(), 0);
+    sem.signal();
+    sem.wait().unwrap();
+    assert_eq!(sem.count(), 0);
+}
 
 #[test]
 fn interleaved_race_loses_an_update() {
