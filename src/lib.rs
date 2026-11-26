@@ -8,6 +8,8 @@
 //! threads. Real threads are used only in `sync` where demonstrating
 //! genuine concurrency is the point.
 
+#![warn(missing_docs)]
+
 pub mod deadlock;
 pub mod ipc;
 pub mod kernel;
