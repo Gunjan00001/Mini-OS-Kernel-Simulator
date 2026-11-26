@@ -17,11 +17,30 @@ pub struct Message {
 /// Errors returned by queues and shared-memory regions.
 #[derive(Debug)]
 pub enum IpcError {
+    /// No queue with this id exists.
     UnknownQueue(u32),
+    /// No shared-memory region with this id exists.
     UnknownRegion(u32),
-    QueueFull { queue: u32, sender: u32 },
+    /// The queue is at capacity; the sender would block.
+    QueueFull {
+        /// Queue that rejected the send.
+        queue: u32,
+        /// Process that tried to send.
+        sender: u32,
+    },
+    /// The queue is empty; the receiver would block.
     QueueEmpty(u32),
-    BadBounds { region: u32, offset: usize, len: usize, size: usize },
+    /// A region access falls outside the allocated bytes.
+    BadBounds {
+        /// Region being accessed.
+        region: u32,
+        /// First byte of the access.
+        offset: usize,
+        /// Number of bytes requested.
+        len: usize,
+        /// Size of the region.
+        size: usize,
+    },
 }
 
 impl fmt::Display for IpcError {
@@ -50,6 +69,7 @@ impl fmt::Display for IpcError {
 /// removes the oldest blocked sender.
 #[derive(Debug)]
 pub struct MessageQueue {
+    /// Maximum number of buffered messages (at least one).
     pub capacity: usize,
     /// Processes that tried to send while the queue was full.
     pub blocked_senders: Vec<u32>,
@@ -65,14 +85,17 @@ impl MessageQueue {
         }
     }
 
+    /// Number of buffered messages.
     pub fn len(&self) -> usize {
         self.messages.len()
     }
 
+    /// True when no message is buffered.
     pub fn is_empty(&self) -> bool {
         self.messages.is_empty()
     }
 
+    /// Read-only access to the buffered messages (oldest first).
     pub fn messages(&self) -> &VecDeque<Message> {
         &self.messages
     }
@@ -83,7 +106,9 @@ impl MessageQueue {
 /// Queue and region ids share one counter so displays can use unambiguous
 /// `Q1`/`R2` labels.
 pub struct Ipc {
+    /// Message queues keyed by id (`Q1`, `Q2`, ...).
     pub queues: BTreeMap<u32, MessageQueue>,
+    /// Shared-memory byte regions keyed by id (`R1`, `R2`, ...).
     pub regions: BTreeMap<u32, Vec<u8>>,
     next_id: u32,
 }
