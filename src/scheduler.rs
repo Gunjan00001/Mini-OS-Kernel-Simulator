@@ -7,16 +7,27 @@
 
 use crate::process::Process;
 
+/// The five scheduling policies offered by the simulator.
+///
+/// Round Robin is the only variant with configuration; keeping the quantum
+/// inside the enum makes `Algorithm` copyable and lets the compare-all view
+/// pass one quantum to every policy.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Algorithm {
+    /// First Come First Served: arrival order, non-preemptive.
     Fcfs,
+    /// Shortest Job First: smallest burst, non-preemptive.
     Sjf,
+    /// Shortest Remaining Time First: preemptive SRTF.
     Srtf,
+    /// Time-sliced round robin with a per-run quantum.
     RoundRobin { quantum: u32 },
+    /// Non-preemptive priority; lower value runs first.
     Priority,
 }
 
 impl Algorithm {
+    /// Display name used in menus, logs and comparison tables.
     pub fn label(&self) -> String {
         match self {
             Algorithm::Fcfs => "FCFS".to_string(),
@@ -42,25 +53,37 @@ impl Algorithm {
 /// One CPU occupancy interval.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Slot {
+    /// Process that owned the CPU during the interval.
     pub pid: u32,
+    /// First tick of the interval (inclusive).
     pub start: u32,
+    /// Tick after the last tick of the interval (exclusive).
     pub end: u32,
 }
 
+/// Aggregate metrics derived from a schedule's timeline.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Metrics {
+    /// Mean ticks spent ready-but-not-running.
     pub avg_wait: f64,
+    /// Mean completion time minus arrival time.
     pub avg_turnaround: f64,
+    /// Mean first-dispatch time minus arrival time.
     pub avg_response: f64,
+    /// Percentage of the observed makespan spent executing processes.
     pub cpu_util_pct: f64,
     /// Processes completed per unit of time.
     pub throughput: f64,
 }
 
+/// Result of running one algorithm over one workload snapshot.
 #[derive(Debug, Clone)]
 pub struct ScheduleResult {
+    /// Policy that produced this timeline.
     pub algo: Algorithm,
+    /// CPU intervals in chronological order.
     pub slots: Vec<Slot>,
+    /// Metrics computed from `slots`.
     pub metrics: Metrics,
 }
 
@@ -70,10 +93,15 @@ pub struct ProcStat {
     pub pid: u32,
     pub arrival: u32,
     pub burst: u32,
+    /// Tick of the process's first CPU slot.
     pub first_start: u32,
+    /// Tick at which the process's last CPU slot ends.
     pub finish: u32,
+    /// `finish - arrival - burst`.
     pub wait: u32,
+    /// `finish - arrival`.
     pub turnaround: u32,
+    /// `first_start - arrival`.
     pub response: u32,
 }
 
@@ -100,6 +128,8 @@ pub fn schedule(processes: &[Process], algo: Algorithm) -> ScheduleResult {
             remaining: p.burst,
         })
         .collect();
+    // Sorting by (arrival, pid) makes ties deterministic and lets the
+    // round-robin loop enqueue jobs in a single forward pass.
     jobs.sort_by_key(|j| (j.arrival, j.pid));
 
     let slots = match algo {
@@ -115,6 +145,7 @@ pub fn schedule(processes: &[Process], algo: Algorithm) -> ScheduleResult {
 }
 
 /// FCFS: run in arrival order, skipping ahead over idle time.
+/// Non-preemptive by definition: once a slot starts, it runs to completion.
 fn fcfs(jobs: &mut [Job]) -> Vec<Slot> {
     let mut t = 0;
     let mut slots = Vec::new();
@@ -162,6 +193,10 @@ where
 }
 
 /// SRTF: preemptive shortest-remaining-time-first, one tick at a time.
+///
+/// A one-tick step is the simplest way to model preemption exactly: before
+/// every tick the shortest arrived job is re-selected. Ties are broken by
+/// arrival then pid, so the same workload always produces the same timeline.
 fn srtf(jobs: &mut [Job]) -> Vec<Slot> {
     let mut t = 0;
     let mut done = 0usize;
@@ -191,6 +226,10 @@ fn srtf(jobs: &mut [Job]) -> Vec<Slot> {
 }
 
 /// Round Robin with a time quantum.
+///
+/// The ready queue is a `VecDeque` of job indices. The quantum is already
+/// clamped to at least one by [`schedule`], so the slice can always make
+/// progress.
 fn round_robin(jobs: &mut [Job], quantum: u32) -> Vec<Slot> {
     let mut queue = std::collections::VecDeque::new();
     let mut next = 0usize; // next job (in arrival order) not yet enqueued
@@ -228,6 +267,10 @@ fn round_robin(jobs: &mut [Job], quantum: u32) -> Vec<Slot> {
 }
 
 /// Coalesce adjacent slices of the same process (produced by the tick loop).
+///
+/// `dedup_by` hands the current element as `a` and the surviving element as
+/// `b`; extending `b.end` here turns per-tick SRTF slices back into one Gantt
+/// interval.
 fn merge_slots(mut slots: Vec<Slot>) -> Vec<Slot> {
     slots.dedup_by(|a, b| {
         if a.pid == b.pid && a.start == b.end {
@@ -240,6 +283,12 @@ fn merge_slots(mut slots: Vec<Slot>) -> Vec<Slot> {
     slots
 }
 
+/// Derive aggregate metrics from the merged timeline.
+///
+/// Formulas match the textbook definitions documented in
+/// [`crate::scheduler`]: turnaround = finish - arrival, wait = turnaround -
+/// burst, response = first start - arrival. An empty workload returns zeros
+/// instead of dividing by zero.
 fn compute_metrics(processes: &[Process], slots: &[Slot]) -> Metrics {
     let scheduled: Vec<&Process> = processes.iter().filter(|p| p.burst > 0).collect();
     let n = scheduled.len();
@@ -316,6 +365,8 @@ pub fn gantt(result: &ScheduleResult, processes: &[Process]) -> String {
     let mut last_end = 0u32;
     for slot in &result.slots {
         let label = format!(" {}", name(slot.pid));
+        // Width must fit the label, the start-time number and a minimum of
+        // four characters, so the time ruler lines up with the cells below.
         let w = label
             .len()
             .max(slot.start.to_string().len())
