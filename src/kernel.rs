@@ -17,12 +17,19 @@ use crate::scheduler::{self, Algorithm};
 /// consistent message and tests can match on the failing layer.
 #[derive(Debug)]
 pub enum KernelError {
+    /// No process with this pid exists.
     NotFound(u32),
+    /// The requested state transition is not in the legal graph.
     InvalidTransition(u32, State, State),
+    /// Contiguous allocator failure.
     Memory(MemError),
+    /// Page-table or address-translation failure.
     Paging(PagingError),
+    /// Queue or shared-memory failure.
     Ipc(IpcError),
+    /// Banker's/detection failure.
     Deadlock(DeadlockError),
+    /// Free-form failure (e.g. no runnable processes).
     Other(String),
 }
 
