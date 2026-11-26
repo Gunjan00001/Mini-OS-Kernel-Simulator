@@ -3,14 +3,19 @@
 
 use std::fmt;
 
+/// Contiguous-allocation strategies exposed by the memory menu.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum FitStrategy {
+    /// First hole large enough (lowest address).
     First,
+    /// Smallest hole large enough (leaves the least waste).
     Best,
+    /// Largest hole (leaves the largest remainder).
     Worst,
 }
 
 impl FitStrategy {
+    /// Uppercase label for screens, logs and the report.
     pub fn name(&self) -> &'static str {
         match self {
             FitStrategy::First => "FIRST FIT",
@@ -23,11 +28,15 @@ impl FitStrategy {
 /// One region of physical memory. `owner == None` means free (a hole).
 #[derive(Debug, Clone)]
 pub struct Block {
+    /// First address in the region.
     pub start: u32,
+    /// Number of contiguous units in the region.
     pub size: u32,
-    pub owner: Option<(u32, String)>, // (pid, name)
+    /// `(pid, name)` when allocated, `None` when free.
+    pub owner: Option<(u32, String)>,
 }
 
+/// Errors returned by the contiguous allocator.
 #[derive(Debug)]
 pub enum MemError {
     InsufficientMemory { requested: u32, available: u32 },
@@ -50,6 +59,11 @@ impl fmt::Display for MemError {
     }
 }
 
+/// Contiguous allocator over one physical address space.
+///
+/// Invariant: `blocks` is sorted by `start`, covers `[0, total)` without gaps,
+/// and adjacent free blocks are always coalesced. Allocation splits a hole;
+/// freeing merges neighbouring holes.
 pub struct MemoryManager {
     pub total: u32,
     pub strategy: FitStrategy,
@@ -57,6 +71,7 @@ pub struct MemoryManager {
 }
 
 impl MemoryManager {
+    /// Start with one free block covering the whole address space.
     pub fn new(total: u32) -> Self {
         MemoryManager {
             total,
@@ -71,9 +86,13 @@ impl MemoryManager {
         if size == 0 {
             return Err(MemError::InvalidSize(size));
         }
+        // One contiguous block per process keeps the map easy to read and
+        // mirrors the simplified allocator taught in the course.
         if self.blocks.iter().any(|b| b.owner.as_ref().map(|(p, _)| *p) == Some(pid)) {
             return Err(MemError::DuplicateOwner(pid));
         }
+        // Candidate holes are collected first because the strategy choice
+        // needs to compare them before mutating the block list.
         let candidates: Vec<usize> = self
             .blocks
             .iter()
@@ -100,6 +119,8 @@ impl MemoryManager {
         let leftover = hole.size - size;
         hole.size = size;
         hole.owner = Some((pid, name.to_string()));
+        // Split the hole: the allocation keeps the low address, the remainder
+        // becomes the next (still sorted) free block.
         if leftover > 0 {
             self.blocks.insert(
                 idx + 1,
@@ -138,14 +159,17 @@ impl MemoryManager {
         self.blocks = merged;
     }
 
+    /// Total units currently owned by a process.
     pub fn used(&self) -> u32 {
         self.blocks.iter().filter(|b| b.owner.is_some()).map(|b| b.size).sum()
     }
 
+    /// Total units not owned by any process.
     pub fn free_bytes(&self) -> u32 {
         self.total - self.used()
     }
 
+    /// Size of the biggest single hole (useful for external fragmentation).
     pub fn largest_free_hole(&self) -> u32 {
         self.blocks
             .iter()
@@ -161,6 +185,7 @@ impl MemoryManager {
         self.free_bytes() - self.largest_free_hole()
     }
 
+    /// Read-only view of the block list used by tests and displays.
     pub fn blocks(&self) -> &[Block] {
         &self.blocks
     }
@@ -204,6 +229,7 @@ impl MemoryManager {
     }
 }
 
+/// Shorten a label to `n` display characters, marking truncation with `~`.
 fn truncate(s: &str, n: usize) -> String {
     if s.chars().count() <= n {
         s.to_string()

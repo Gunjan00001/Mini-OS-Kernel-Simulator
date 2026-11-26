@@ -10,14 +10,19 @@
 use std::collections::{BTreeMap, VecDeque};
 use std::fmt;
 
+/// Page-replacement policies supported by the simulator.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Replacement {
+    /// Evict the page that has been resident longest.
     Fifo,
+    /// Evict the least recently accessed page.
     Lru,
+    /// Offline optimum: evict the page whose next use is farthest away.
     Optimal,
 }
 
 impl Replacement {
+    /// Uppercase label for screens and result tables.
     pub fn name(&self) -> &'static str {
         match self {
             Replacement::Fifo => "FIFO",
@@ -27,6 +32,7 @@ impl Replacement {
     }
 }
 
+/// Address-translation errors, surfaced to the kernel and UI.
 #[derive(Debug)]
 pub enum PagingError {
     UnknownProcess(u32),
@@ -48,16 +54,24 @@ impl fmt::Display for PagingError {
 }
 
 /// Per-process page table: page number -> resident frame.
+///
+/// Only resident pages appear in `loaded`; a missing page is a fault and is
+/// loaded on demand.
 struct PageTable {
     num_pages: u32,
     loaded: BTreeMap<u32, u32>,
 }
 
+/// What currently occupies a physical frame.
 struct FrameUse {
     pid: u32,
     page: u32,
 }
 
+/// Paging subsystem: one shared frame pool plus per-process page tables.
+///
+/// FIFO and LRU bookkeeping is global because frames are global. The clock
+/// only advances on translation requests, which makes LRU deterministic.
 pub struct PagedMemory {
     pub page_size: u32,
     pub total_frames: u32,
@@ -75,6 +89,8 @@ pub struct PagedMemory {
 }
 
 impl PagedMemory {
+    /// Build a frame pool. Page size and frame count are clamped to at least
+    /// one because victim selection is undefined for an empty pool.
     pub fn new(page_size: u32, total_frames: u32) -> Self {
         let frames = total_frames.max(1) as usize;
         PagedMemory {
@@ -115,10 +131,12 @@ impl PagedMemory {
         self.last_used.retain(|&(p, _), _| p != pid);
     }
 
+    /// Number of frames currently holding a page.
     pub fn used_frames(&self) -> u32 {
         self.frames.iter().filter(|f| f.is_some()).count() as u32
     }
 
+    /// Sum of last-page waste over every attached process.
     pub fn internal_fragmentation(&self) -> u32 {
         self.page_waste.values().sum()
     }
@@ -126,6 +144,9 @@ impl PagedMemory {
     /// Translate a logical address for `pid`. On a miss, handles the page
     /// fault with the given replacement policy and counts faults/hits.
     /// Returns the physical address.
+    ///
+    /// The address is validated against the process's address-space limit
+    /// before any frame or policy state is touched.
     pub fn translate(&mut self, pid: u32, addr: u32, algo: Replacement) -> Result<u32, PagingError> {
         let page_size = self.page_size;
         let page = addr / page_size;
@@ -143,13 +164,15 @@ impl PagedMemory {
         self.clock += 1;
         let now = self.clock;
 
+        // Hit: the frame is already in this process's page table.
         if let Some(&frame) = self.tables[&pid].loaded.get(&page) {
             self.hits += 1;
             self.last_used.insert((pid, page), now);
             return Ok(frame * page_size + offset);
         }
 
-        // Page fault: obtain a frame (free first, else evict).
+        // Page fault: obtain a frame (free first, else evict), then install
+        // the new mapping and update FIFO/LRU bookkeeping.
         self.faults += 1;
         let frame = self.obtain_frame(algo);
         self.frames[frame as usize] = Some(FrameUse { pid, page });
@@ -160,6 +183,10 @@ impl PagedMemory {
     }
 
     /// Find a free frame, or evict a victim page and return its frame.
+    ///
+    /// Eviction removes the victim from the frame table, the owner's page
+    /// table and both replacement structures; missing one would leave stale
+    /// bookkeeping that later picks an already-free victim.
     fn obtain_frame(&mut self, algo: Replacement) -> u32 {
         if let Some(i) = self.frames.iter().position(|f| f.is_none()) {
             return i as u32;
@@ -233,6 +260,10 @@ impl PagedMemory {
 
 /// Offline page-replacement simulation over a known reference string.
 /// Returns (faults, hits). This is where true Optimal is computed.
+///
+/// FIFO keeps `frames` in load order and evicts index 0. LRU evicts the page
+/// with the oldest access stamp. Optimal scans the remaining reference string
+/// and evicts the page used farthest in the future (or never again).
 pub fn simulate_replacement(reference: &[u32], num_frames: usize, algo: Replacement) -> (u64, u64) {
     // A zero frame pool would make victim selection panic; one frame is the
     // smallest meaningful configuration.
