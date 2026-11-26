@@ -1,7 +1,18 @@
 //! Terminal interface: colorized menus, tables and dashboard.
 //!
+//! The UI is deliberately a plain blocking CLI: one prompt, one action, one
+//! result. It owns no simulation state — every operation is a method on
+//! [`Kernel`] — and it never panics on user input (bad pids, unknown menu
+//! entries and invalid transitions are printed as errors).
+//!
 //! Colors are applied through `crate::theme` and automatically disappear when
 //! stdout is not a terminal, so piped output and tests stay plain text.
+//!
+//! Layout conventions:
+//! - `banner`/`screen` draw the chrome; `options` renders one numbered row.
+//! - `ask*` helpers read stdin and exit cleanly on EOF (piped scripts).
+//! - Column widths are applied before painting; ANSI escapes would otherwise
+//!   count as visible characters and break table alignment.
 
 use std::io::{self, IsTerminal, Write};
 
@@ -15,10 +26,13 @@ use crate::sync;
 use crate::theme::{self, paint, BOLD, CYAN, DIM, GREEN, RED, YELLOW};
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
+/// Width between the banner's vertical borders.
 const INNER: usize = 54;
 
 // ---------- chrome ----------
 
+/// Clear the terminal first, but only in an interactive session so captured
+/// transcripts keep every screen.
 fn clear_screen() {
     if theme::interactive() {
         print!("\x1b[2J\x1b[H");
@@ -26,6 +40,7 @@ fn clear_screen() {
     }
 }
 
+/// Draw the boxed application banner with the crate version.
 fn banner() {
     let edge = paint(&format!("╔{}╗", "═".repeat(INNER)), CYAN);
     let bottom = paint(&format!("╚{}╝", "═".repeat(INNER)), CYAN);
@@ -40,6 +55,7 @@ fn banner() {
     println!("{bottom}");
 }
 
+/// Print a screen title and the one-line context strip.
 fn screen(title: &str, context: &str) {
     clear_screen();
     println!();
@@ -50,6 +66,7 @@ fn screen(title: &str, context: &str) {
     println!();
 }
 
+/// Render numbered menu entries as `key. label` plus a dim hint column.
 fn options(items: &[(&str, &str, &str)]) {
     for (key, label, hint) in items {
         println!(
@@ -62,24 +79,32 @@ fn options(items: &[(&str, &str, &str)]) {
     println!();
 }
 
+/// Build the colored `» prompt:` prefix used by every input.
 fn prompt(text: &str) -> String {
     paint(&format!("» {text}:"), &format!("{BOLD}{GREEN}"))
 }
 
+/// Print a green success line.
 fn ok(msg: &str) {
     println!("  {} {}", paint("OK", &format!("{BOLD}{GREEN}")), msg);
 }
 
+/// Print an unadorned informational line.
 fn info(msg: &str) {
     println!("  {}", msg);
 }
 
+/// Wait for Enter only in a real terminal; scripted transcripts never block.
 fn pause() {
     if io::stdin().is_terminal() {
         ask(&paint("- press Enter to continue -", DIM));
     }
 }
 
+/// Unwrap a kernel result, printing the error and returning `None` on failure.
+///
+/// Menus use this so every subsystem error looks the same and no `?` can
+/// abort the interactive loop.
 fn report<T>(r: Result<T, KernelError>) -> Option<T> {
     match r {
         Ok(v) => Some(v),
@@ -90,6 +115,10 @@ fn report<T>(r: Result<T, KernelError>) -> Option<T> {
     }
 }
 
+/// Pick a color for an event line from keywords in its message.
+///
+/// The event log stores plain strings, so classification is presentation-only
+/// and deliberately loose; an unknown event simply prints unstyled.
 fn event_style(msg: &str) -> &'static str {
     if msg.contains("created") || msg.contains("READY") {
         GREEN
@@ -106,6 +135,7 @@ fn event_style(msg: &str) -> &'static str {
     }
 }
 
+/// Print the full kernel event log, newest last, with tick numbers.
 fn print_event_log(k: &Kernel) {
     println!("  {}", paint("EVENT LOG", &format!("{BOLD}{CYAN}")));
     for e in k.events() {
@@ -119,6 +149,7 @@ fn print_event_log(k: &Kernel) {
 
 // ---------- input helpers ----------
 
+/// Read one line from stdin, echo it for piped sessions, and exit on EOF.
 pub fn ask(prompt_text: &str) -> String {
     print!("{} ", prompt_text);
     io::stdout().flush().unwrap();
@@ -146,6 +177,7 @@ pub fn ask(prompt_text: &str) -> String {
     }
 }
 
+/// Read a whole number, re-prompting until the input parses.
 pub fn ask_u32(prompt_text: &str) -> u32 {
     loop {
         match ask(prompt_text).parse() {
@@ -155,11 +187,13 @@ pub fn ask_u32(prompt_text: &str) -> u32 {
     }
 }
 
+/// Read a whole number with a visible default (blank/invalid input keeps it).
 fn ask_u32_or(prompt_text: &str, default: u32) -> u32 {
     let s = ask(&format!("{prompt_text} [{}]", paint(&default.to_string(), YELLOW)));
     s.parse().unwrap_or(default)
 }
 
+/// Read exactly `n` whitespace-separated whole numbers.
 fn ask_vec_u32(prompt_text: &str, n: usize) -> Vec<u32> {
     loop {
         let line = ask(&format!("{prompt_text} ({} values, space separated)", n));
@@ -171,12 +205,15 @@ fn ask_vec_u32(prompt_text: &str, n: usize) -> Vec<u32> {
     }
 }
 
+/// Compact memory-usage bar for context strips.
 fn usage_bar(k: &Kernel) -> String {
     theme::bar(k.memory.used(), k.memory.total, 20)
 }
 
 // ---------- main menu ----------
 
+/// Top-level loop: draw the main menu, dispatch one submenu, repeat until
+/// the user exits. Event echo is enabled here so every syscall is visible.
 pub fn main_menu(kernel: &mut Kernel) {
     kernel.echo_events = true;
     loop {
@@ -236,6 +273,7 @@ pub fn main_menu(kernel: &mut Kernel) {
 
 // ---------- 1. process management ----------
 
+/// Process lifecycle menu: fork/exit/wait/wake/dispatch plus tables.
 fn process_menu(k: &mut Kernel) {
     loop {
         let ctx = format!(
@@ -334,6 +372,7 @@ fn process_menu(k: &mut Kernel) {
     }
 }
 
+/// Print the process table with a colored state per row.
 fn list_processes(k: &Kernel) {
     if k.processes.is_empty() {
         println!("  {}", paint("No processes yet. Create one first (option 1).", DIM));
@@ -366,6 +405,7 @@ fn list_processes(k: &Kernel) {
 
 // ---------- 2. cpu scheduling ----------
 
+/// Scheduling menu: run one policy or compare all five on the same snapshot.
 fn schedule_menu(k: &mut Kernel) {
     const QUANTUM: u32 = 2;
     loop {
@@ -398,6 +438,7 @@ fn schedule_menu(k: &mut Kernel) {
     }
 }
 
+/// Run one algorithm and print its Gantt chart, metrics and per-process stats.
 fn run_and_show(k: &mut Kernel, algo: Algorithm) {
     if report(k.run_schedule(algo)).is_none() {
         return;
@@ -415,6 +456,7 @@ fn run_and_show(k: &mut Kernel, algo: Algorithm) {
     pause();
 }
 
+/// Print a legend of the pids that actually appear in the timeline.
 fn print_legend(result: &scheduler::ScheduleResult, procs: &[crate::process::Process]) {
     let mut seen: Vec<u32> = Vec::new();
     for s in &result.slots {
@@ -436,6 +478,7 @@ fn print_legend(result: &scheduler::ScheduleResult, procs: &[crate::process::Pro
     println!("  {} {}", paint("legend:", DIM), names.join("  "));
 }
 
+/// One-line aggregate metrics row.
 fn show_metrics(result: &scheduler::ScheduleResult) {
     let m = &result.metrics;
     let metric = |label: &str, value: String| format!("{} {}", paint(label, DIM), paint(&value, YELLOW));
@@ -449,6 +492,8 @@ fn show_metrics(result: &scheduler::ScheduleResult) {
     );
 }
 
+/// Per-process table: arrival, burst, first start, finish, wait, TAT and
+/// response time, all derived from the same timeline as the metrics.
 fn show_stats(result: &scheduler::ScheduleResult, procs: &[crate::process::Process]) {
     println!(
         "  {}",
@@ -475,6 +520,8 @@ fn show_stats(result: &scheduler::ScheduleResult, procs: &[crate::process::Proce
     }
 }
 
+/// Run all five algorithms on one workload and highlight the best value for
+/// each metric. `green` is a per-row comparison, not a global winner.
 fn compare_all(k: &mut Kernel, quantum: u32) {
     let procs: Vec<crate::process::Process> = k
         .processes
@@ -561,6 +608,8 @@ fn compare_all(k: &mut Kernel, quantum: u32) {
 
 // ---------- 3. memory management ----------
 
+/// Memory menu: contiguous allocation, fit strategy, paging and the
+/// replacement demo.
 fn memory_menu(k: &mut Kernel) {
     loop {
         screen(
@@ -705,6 +754,7 @@ fn memory_menu(k: &mut Kernel) {
     }
 }
 
+/// Ask for a replacement policy; Enter defaults to FIFO.
 fn pick_replacement() -> Replacement {
     match ask(&prompt("Policy: 1 = FIFO, 2 = LRU, 3 = Optimal")).as_str() {
         "2" => Replacement::Lru,
@@ -715,6 +765,8 @@ fn pick_replacement() -> Replacement {
 
 // ---------- 4. synchronization ----------
 
+/// Synchronization demos (no kernel state): interleaved race, real-thread
+/// race, bounded producer-consumer and the semaphore walkthrough.
 fn sync_menu() {
     loop {
         screen(
@@ -808,6 +860,7 @@ fn sync_menu() {
 
 // ---------- 5. ipc ----------
 
+/// IPC menu: create queues/regions, send/receive, read/write shared memory.
 fn ipc_menu(k: &mut Kernel) {
     loop {
         screen(
@@ -906,6 +959,8 @@ fn ipc_menu(k: &mut Kernel) {
 
 // ---------- 6. deadlock ----------
 
+/// Deadlock menu: load the textbook scenarios, inspect state, run Banker's,
+/// request resources, or run detection.
 fn deadlock_menu(k: &mut Kernel) {
     loop {
         screen(
@@ -1071,6 +1126,8 @@ fn demo_deadlock_scenario() -> deadlock::ResourceState {
 
 // ---------- 7. system calls ----------
 
+/// System-call menu: exercise the kernel entry points directly (the same
+/// methods the other menus call internally).
 fn syscall_menu(k: &mut Kernel) {
     loop {
         screen(
