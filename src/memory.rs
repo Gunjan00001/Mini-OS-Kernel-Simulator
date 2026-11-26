@@ -39,9 +39,18 @@ pub struct Block {
 /// Errors returned by the contiguous allocator.
 #[derive(Debug)]
 pub enum MemError {
-    InsufficientMemory { requested: u32, available: u32 },
+    /// No single hole is large enough for the request.
+    InsufficientMemory {
+        /// Units requested.
+        requested: u32,
+        /// Total free units (may be split across holes).
+        available: u32,
+    },
+    /// The pid holds no block to free.
     NoAllocation(u32),
+    /// The pid already owns a block (one block per process).
     DuplicateOwner(u32),
+    /// A zero-unit allocation is rejected.
     InvalidSize(u32),
 }
 
@@ -65,7 +74,9 @@ impl fmt::Display for MemError {
 /// and adjacent free blocks are always coalesced. Allocation splits a hole;
 /// freeing merges neighbouring holes.
 pub struct MemoryManager {
+    /// Size of the simulated physical memory, in abstract units.
     pub total: u32,
+    /// Active allocation strategy; switchable at runtime.
     pub strategy: FitStrategy,
     blocks: Vec<Block>, // sorted by start
 }
