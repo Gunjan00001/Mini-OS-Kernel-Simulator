@@ -21,7 +21,10 @@ pub enum Algorithm {
     /// Shortest Remaining Time First: preemptive SRTF.
     Srtf,
     /// Time-sliced round robin with a per-run quantum.
-    RoundRobin { quantum: u32 },
+    RoundRobin {
+        /// Ticks per slice (clamped to at least one by [`schedule`]).
+        quantum: u32,
+    },
     /// Non-preemptive priority; lower value runs first.
     Priority,
 }
@@ -90,8 +93,11 @@ pub struct ScheduleResult {
 /// Per-process schedule statistics.
 #[derive(Debug, Clone, Copy)]
 pub struct ProcStat {
+    /// Process id this row describes.
     pub pid: u32,
+    /// Arrival tick from the PCB.
     pub arrival: u32,
+    /// Total burst from the PCB.
     pub burst: u32,
     /// Tick of the process's first CPU slot.
     pub first_start: u32,
