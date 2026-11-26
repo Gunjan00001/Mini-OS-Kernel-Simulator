@@ -190,6 +190,17 @@ fn paging_attach_requires_an_existing_process() {
 }
 
 #[test]
+fn dashboard_on_empty_kernel_is_read_only() {
+    let k = Kernel::new(1024, 4, 8);
+    let tick = k.tick;
+    let d = k.dashboard();
+    assert!(d.contains("KERNEL DASHBOARD"));
+    assert!(d.contains("CPU STATUS       : IDLE"));
+    // Rendering the dashboard must not advance the event clock.
+    assert_eq!(k.tick, tick);
+}
+
+#[test]
 fn every_syscall_advances_the_tick_and_logs() {
     let mut k = Kernel::new(1024, 4, 8);
     let before = k.tick;
