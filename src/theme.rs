@@ -10,6 +10,8 @@
 use std::io::IsTerminal;
 use std::sync::OnceLock;
 
+// ANSI SGR sequences. Named constants keep the UI code readable and make it
+// impossible to forget the reset when adding a new style.
 pub const RESET: &str = "\x1b[0m";
 pub const BOLD: &str = "\x1b[1m";
 pub const DIM: &str = "\x1b[2m";
@@ -25,6 +27,11 @@ pub const BRIGHT_YELLOW: &str = "\x1b[93m";
 /// Foreground colors cycled by pid for tables and the Gantt legend.
 pub const PID_FG: [&str; 6] = [RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN];
 
+/// Whether ANSI colors should be emitted.
+///
+/// Detection order: `NO_COLOR` wins, then `FORCE_COLOR`, then a terminal
+/// check, then Windows VT support. The result is cached because probing the
+/// console is a syscall and the answer cannot change mid-process.
 pub fn enabled() -> bool {
     static ENABLED: OnceLock<bool> = OnceLock::new();
     *ENABLED.get_or_init(|| {
@@ -61,6 +68,7 @@ pub fn paint(text: &str, style: &str) -> String {
     }
 }
 
+/// Pick the foreground color for a pid (deterministic cycling).
 pub fn pid_fg(pid: u32) -> &'static str {
     PID_FG[pid as usize % PID_FG.len()]
 }
@@ -108,6 +116,10 @@ pub fn state_style(state: crate::process::State) -> &'static str {
     }
 }
 
+/// Enable `ENABLE_VIRTUAL_TERMINAL_PROCESSING` on the stdout console.
+///
+/// Windows consoles ignore ANSI escapes unless this flag is set. Two direct
+/// kernel32 calls avoid pulling in a Windows bindings crate.
 #[cfg(windows)]
 fn enable_windows_vt() -> bool {
     use std::os::windows::io::AsRawHandle;

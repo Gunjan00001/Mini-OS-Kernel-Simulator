@@ -11,6 +11,10 @@ use crate::paging::{PagedMemory, PagingError};
 use crate::process::{Process, State};
 use crate::scheduler::{self, Algorithm};
 
+/// Unified error type returned by every kernel entry point.
+///
+/// Subsystem errors convert into this enum with `From`, so menus can print one
+/// consistent message and tests can match on the failing layer.
 #[derive(Debug)]
 pub enum KernelError {
     NotFound(u32),
@@ -62,24 +66,40 @@ impl From<DeadlockError> for KernelError {
     }
 }
 
+/// One entry in the centralized event log.
 #[derive(Debug, Clone)]
 pub struct Event {
+    /// Simulation tick at which the event happened.
     pub tick: u32,
+    /// Human-readable description, e.g. `CPU assigned to P2`.
     pub msg: String,
 }
 
 /// The kernel. Owns every subsystem; nothing here is global static state.
+///
+/// The UI holds exactly one `Kernel` and drives it through the methods below.
+/// Each successful operation logs an [`Event`], and every logged event
+/// advances [`Kernel::tick`], so system time is the number of kernel events.
 pub struct Kernel {
+    /// Number of events logged so far (= simulated system time).
     pub tick: u32,
+    /// Next pid to hand out; only consumed when a fork succeeds.
     pub next_pid: u32,
     /// Echo every event to stdout as it happens (enabled by the UI).
     pub echo_events: bool,
+    /// Process table keyed by pid.
     pub processes: BTreeMap<u32, Process>,
+    /// Policy used by the last scheduling run.
     pub scheduler_algo: Algorithm,
+    /// Timeline and metrics of the last run, kept for display.
     pub last_schedule: Option<scheduler::ScheduleResult>,
+    /// Contiguous memory allocator.
     pub memory: MemoryManager,
+    /// Page tables and the global frame pool.
     pub paging: PagedMemory,
+    /// Message queues and shared-memory regions.
     pub ipc: Ipc,
+    /// Banker's/detection resource state.
     pub resources: ResourceState,
     events: Vec<Event>,
 }
@@ -114,10 +134,12 @@ impl Kernel {
         self.events.push(Event { tick: self.tick, msg });
     }
 
+    /// Read-only view of the event log (used by the UI and tests).
     pub fn events(&self) -> &[Event] {
         &self.events
     }
 
+    /// Print the whole event log with tick numbers, one line per event.
     pub fn print_events(&self) {
         for e in &self.events {
             println!("[{}] {}", e.tick, e.msg);
@@ -127,6 +149,9 @@ impl Kernel {
     // ---- internal helpers ----
 
     /// Validate and apply a state transition, then log it.
+    ///
+    /// Keeping validation here (rather than in each syscall) guarantees that
+    /// every transition goes through the same state-machine check.
     fn set_state(&mut self, pid: u32, to: State) -> Result<(), KernelError> {
         let (name, from) = {
             let p = self.processes.get(&pid).ok_or(KernelError::NotFound(pid))?;
@@ -141,6 +166,7 @@ impl Kernel {
         Ok(())
     }
 
+    /// Fail fast when a syscall names a pid that was never created.
     fn require_pid(&self, pid: u32) -> Result<(), KernelError> {
         if self.processes.contains_key(&pid) {
             Ok(())
@@ -315,6 +341,11 @@ impl Kernel {
 
     // ---- dashboard ----
 
+    /// Render the colorized kernel dashboard.
+    ///
+    /// The dashboard is read-only: it aggregates state from every subsystem
+    /// but never mutates or logs anything, so opening it does not advance the
+    /// simulation clock.
     pub fn dashboard(&self) -> String {
         use crate::theme::{self, paint, BOLD, CYAN, DIM, GREEN, RED, YELLOW};
 
