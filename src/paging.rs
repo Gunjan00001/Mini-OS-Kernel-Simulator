@@ -35,8 +35,17 @@ impl Replacement {
 /// Address-translation errors, surfaced to the kernel and UI.
 #[derive(Debug)]
 pub enum PagingError {
+    /// The pid has no page table attached.
     UnknownProcess(u32),
-    InvalidAccess { pid: u32, addr: u32, limit: u32 },
+    /// The logical address falls outside the process's address space.
+    InvalidAccess {
+        /// Process that made the access.
+        pid: u32,
+        /// Logical address that was rejected.
+        addr: u32,
+        /// Size of the address space in bytes.
+        limit: u32,
+    },
 }
 
 impl fmt::Display for PagingError {
@@ -73,7 +82,9 @@ struct FrameUse {
 /// FIFO and LRU bookkeeping is global because frames are global. The clock
 /// only advances on translation requests, which makes LRU deterministic.
 pub struct PagedMemory {
+    /// Bytes per page (at least one).
     pub page_size: u32,
+    /// Number of physical frames (at least one).
     pub total_frames: u32,
     frames: Vec<Option<FrameUse>>,
     tables: BTreeMap<u32, PageTable>,
@@ -84,7 +95,9 @@ pub struct PagedMemory {
     /// (pid, page) -> last access stamp, for LRU victim selection.
     last_used: BTreeMap<(u32, u32), u64>,
     clock: u64,
+    /// Number of page faults since kernel creation.
     pub faults: u64,
+    /// Number of successful translations since kernel creation.
     pub hits: u64,
 }
 
