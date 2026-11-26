@@ -12,16 +12,27 @@ use std::sync::OnceLock;
 
 // ANSI SGR sequences. Named constants keep the UI code readable and make it
 // impossible to forget the reset when adding a new style.
+/// Reset all text attributes.
 pub const RESET: &str = "\x1b[0m";
+/// Bold / increased intensity.
 pub const BOLD: &str = "\x1b[1m";
+/// Dim / decreased intensity, used for hints and secondary text.
 pub const DIM: &str = "\x1b[2m";
+/// Standard red foreground.
 pub const RED: &str = "\x1b[31m";
+/// Standard green foreground.
 pub const GREEN: &str = "\x1b[32m";
+/// Standard yellow foreground.
 pub const YELLOW: &str = "\x1b[33m";
+/// Standard blue foreground.
 pub const BLUE: &str = "\x1b[34m";
+/// Standard magenta foreground.
 pub const MAGENTA: &str = "\x1b[35m";
+/// Standard cyan foreground.
 pub const CYAN: &str = "\x1b[36m";
+/// Bright green foreground.
 pub const BRIGHT_GREEN: &str = "\x1b[92m";
+/// Bright yellow foreground.
 pub const BRIGHT_YELLOW: &str = "\x1b[93m";
 
 /// Foreground colors cycled by pid for tables and the Gantt legend.
