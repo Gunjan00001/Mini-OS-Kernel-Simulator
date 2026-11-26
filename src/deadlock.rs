@@ -25,11 +25,34 @@ pub struct ResourceState {
 /// Errors returned by the Banker's/detection layer.
 #[derive(Debug)]
 pub enum DeadlockError {
+    /// Process index outside the resource matrices.
     InvalidPid(usize),
-    BadVector { expected: usize, got: usize },
-    ExceedsClaim { pid: usize, requested: u32, remaining_claim: u32 },
-    ExceedsAvailable { requested: u32, available: u32 },
+    /// Vector length does not match the number of resource types.
+    BadVector {
+        /// Number of resource types in the scenario.
+        expected: usize,
+        /// Length supplied by the caller.
+        got: usize,
+    },
+    /// Request is larger than the process's remaining claim.
+    ExceedsClaim {
+        /// Process index.
+        pid: usize,
+        /// Amount requested for the offending resource type.
+        requested: u32,
+        /// `max - allocated` for that resource type.
+        remaining_claim: u32,
+    },
+    /// Request is larger than the currently available instances.
+    ExceedsAvailable {
+        /// Amount requested for the offending resource type.
+        requested: u32,
+        /// Instances currently free.
+        available: u32,
+    },
+    /// Granting the request would leave the system unsafe.
     WouldBeUnsafe(usize),
+    /// A max claim is below the current allocation, so the claim is invalid.
     InconsistentState,
 }
 
