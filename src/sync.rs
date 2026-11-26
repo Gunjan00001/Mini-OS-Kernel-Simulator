@@ -179,14 +179,18 @@ pub struct SimSemaphore {
 }
 
 impl SimSemaphore {
+    /// Create a counting semaphore with the given initial count.
     pub fn new(initial: i64) -> Self {
         SimSemaphore { count: initial }
     }
 
+    /// Current count; negative is impossible because `wait` refuses at zero.
     pub fn count(&self) -> i64 {
         self.count
     }
 
+    /// P operation: decrement when positive, otherwise report that the
+    /// caller would block (without blocking a real thread).
     pub fn wait(&mut self) -> Result<(), &'static str> {
         if self.count > 0 {
             self.count -= 1;
@@ -196,6 +200,7 @@ impl SimSemaphore {
         }
     }
 
+    /// V operation: release one unit.
     pub fn signal(&mut self) {
         self.count += 1;
     }
